@@ -1,7 +1,7 @@
 import { EventCalculator, type UserDeck } from '../src'
-import { getTestDataProvider } from './data-provider.test'
+import { TestDataProvider } from './data-provider.test'
 
-const dataProvider = getTestDataProvider()
+const dataProvider = TestDataProvider.INSTANCE
 const instance = new EventCalculator(dataProvider)
 // 同属性同角色四星、当期卡、5破
 test('50+20+15', async () => {
@@ -11,7 +11,7 @@ test('50+20+15', async () => {
   }, 88).then(it => {
     expect(it).toBe(85)
   })
-})
+}, 10000)
 
 // 同属性无支援组合V家四星、非当期卡、0破
 test('40+0+0', async () => {

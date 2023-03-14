@@ -14,19 +14,25 @@ async function getJson (url: string): Promise<any> {
 }
 
 /**
- * 获取用于测试的数据源
+ * 用于测试的数据源
  */
-export function getTestDataProvider (): DataProvider {
-  return {
-    getMasterData: async (key) =>
-      await getJson(`https://sekai-world.github.io/sekai-master-db-diff/${key}.json`),
-    getUserData: (key) => mockUserData[key],
-    getMusicMeta: async () => await getJson('https://storage.sekai.best/sekai-best-assets/music_metas.json')
+export class TestDataProvider implements DataProvider {
+  public static INSTANCE = new TestDataProvider()
+  async getMasterData (key: string): Promise<any> {
+    return await getJson(`https://sekai-world.github.io/sekai-master-db-diff/${key}.json`)
+  }
+
+  async getUserData (key: string): Promise<any> {
+    return mockUserData[key]
+  }
+
+  async getMusicMeta (): Promise<any> {
+    await getJson('https://storage.sekai.best/sekai-best-assets/music_metas.json')
   }
 }
 
 test('master data', async () => {
-  await getTestDataProvider().getMasterData('gameCharacterUnits').then(it => {
+  await TestDataProvider.INSTANCE.getMasterData('gameCharacterUnits').then(it => {
     expect(it).not.toBeUndefined()
     expect(it.length).not.toBe(0)
   })

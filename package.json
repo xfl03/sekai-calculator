@@ -1,6 +1,6 @@
 {
   "name": "sekai-calculator",
-  "version": "0.0.3",
+  "version": "0.0.6",
   "description": "Project SEKAI Calculator for deck power, live score, event point and more.",
   "type": "module",
   "types": "dist/index.d.ts",
@@ -9,7 +9,8 @@
   "scripts": {
     "build": "rollup -c --configPlugin typescript",
     "lint": "eslint --fix 'src/**/*.ts'",
-    "test": "jest"
+    "test": "jest",
+    "release": "pnpm build && pnpm publish"
   },
   "files": [
     "dist/index.js",
