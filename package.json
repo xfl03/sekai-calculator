@@ -1,6 +1,6 @@
 {
   "name": "sekai-calculator",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Project SEKAI Calculator for deck power, live score, event point and more.",
   "type": "module",
   "types": "dist/index.d.ts",
@@ -31,7 +31,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/npm/cli.git"
+    "url": "https://github.com/xfl03/sekai-calculator.git"
   },
   "license": "LGPL-2.1-or-later",
   "devDependencies": {
