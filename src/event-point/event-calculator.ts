@@ -87,4 +87,13 @@ export class EventCalculator {
     return await deckCards.reduce(async (v, it) =>
       await this.getCardEventBonus(it, eventId) + await v, Promise.resolve(0))
   }
+
+  /**
+   * 计算用户卡组的活动加成
+   * @param deckId 用户卡组ID
+   * @param eventId 活动ID
+   */
+  public async getDeckEventBonusById (deckId: number, eventId: number): Promise<number> {
+    return await this.getDeckEventBonus(await this.deckCalculator.getDeck(deckId), eventId)
+  }
 }

@@ -1,4 +1,4 @@
-import { EventCalculator, type UserDeck } from '../src'
+import { EventCalculator } from '../src'
 import { TestDataProvider } from './data-provider.test'
 
 const dataProvider = TestDataProvider.INSTANCE
@@ -25,8 +25,7 @@ test('40+0+0', async () => {
 
 // 选一个卡组算加成，按mock的数据应该是275%加成
 test('deck', async () => {
-  const userDecks = await dataProvider.getUserData('userDecks') as UserDeck[]
-  await instance.getDeckEventBonus(userDecks[0], 88).then(it => {
+  await instance.getDeckEventBonusById(1, 88).then(it => {
     expect(it).toBe(275)
   })
 })
