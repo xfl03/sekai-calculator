@@ -1,4 +1,4 @@
-export default interface EventDeckBonus {
+export interface EventDeckBonus {
   id: number
   eventId: number
   gameCharacterUnitId?: number

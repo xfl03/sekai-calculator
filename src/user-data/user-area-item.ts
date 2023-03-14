@@ -1,4 +1,4 @@
-export default interface UserAreaItem {
+export interface UserAreaItem {
   areaItemId: number
   level: number
 }

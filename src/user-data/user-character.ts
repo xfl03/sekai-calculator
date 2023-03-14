@@ -1,4 +1,4 @@
-export default interface UserCharacter {
+export interface UserCharacter {
   characterId: number
   characterRank: number
 }

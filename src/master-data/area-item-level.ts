@@ -1,4 +1,4 @@
-export default interface AreaItemLevel {
+export interface AreaItemLevel {
   areaItemId: number
   level: number
   targetUnit: string

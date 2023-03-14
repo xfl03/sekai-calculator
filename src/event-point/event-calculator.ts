@@ -1,15 +1,15 @@
-import type DataProvider from '../common/data-provider'
-import type UserCard from '../user-data/user-card'
-import type Card from '../master-data/card'
-import type EventDeckBonus from '../master-data/event-deck-bonus'
-import type EventCard from '../master-data/event-card'
-import type EventRarityBonusRate from '../master-data/event-rarity-bonus-rate'
-import type GameCharacterUnit from '../master-data/game-character-unit'
-import type UserDeck from '../user-data/user-deck'
+import type { DataProvider } from '../common/data-provider'
+import type { UserCard } from '../user-data/user-card'
+import type { Card } from '../master-data/card'
+import type { EventDeckBonus } from '../master-data/event-deck-bonus'
+import type { EventCard } from '../master-data/event-card'
+import type { EventRarityBonusRate } from '../master-data/event-rarity-bonus-rate'
+import type { GameCharacterUnit } from '../master-data/game-character-unit'
+import type { UserDeck } from '../user-data/user-deck'
 import { findOrThrow } from '../util/array-util'
-import DeckCalculator from '../card-deck/deck-calculator'
+import { DeckCalculator } from '../card-deck/deck-calculator'
 
-export default class EventCalculator {
+export class EventCalculator {
   private readonly deckCalculator: DeckCalculator
   public constructor (private readonly dataProvider: DataProvider) {
     this.deckCalculator = new DeckCalculator(dataProvider)

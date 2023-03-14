@@ -1,9 +1,9 @@
-import type DataProvider from '../common/data-provider'
-import type UserCard from '../user-data/user-card'
-import type UserDeck from '../user-data/user-deck'
+import type { DataProvider } from '../common/data-provider'
+import type { UserCard } from '../user-data/user-card'
+import type { UserDeck } from '../user-data/user-deck'
 import { findOrThrow } from '../util/array-util'
 
-export default class DeckCalculator {
+export class DeckCalculator {
   public constructor (private readonly dataProvider: DataProvider) {
   }
 

@@ -1,6 +1,5 @@
-import EventCalculator from '../src/event-point/event-calculator'
+import { EventCalculator, type UserDeck } from '../src'
 import { getTestDataProvider } from './data-provider.test'
-import type UserDeck from '../src/user-data/user-deck'
 
 const dataProvider = getTestDataProvider()
 const instance = new EventCalculator(dataProvider)

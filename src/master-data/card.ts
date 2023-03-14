@@ -1,5 +1,5 @@
-import type Resource from '../common/resource'
-export default interface Card {
+import type { CommonResource } from '../common/resource'
+export interface Card {
   id: number
   seq: number
   characterId: number
@@ -23,11 +23,11 @@ export default interface Card {
     cardParameterType: string
     power: number
   }>
-  specialTrainingCosts: Resource[]
+  specialTrainingCosts: CommonResource[]
   masterLessonAchieveResources: {
     releaseConditionId: number
     cardId: number
     masterRank: number
-    resources: Resource[]
+    resources: CommonResource[]
   }
 }

@@ -1,4 +1,4 @@
-export default interface UserCard {
+export interface UserCard {
   cardId: number
   level?: number
   skillLevel?: number

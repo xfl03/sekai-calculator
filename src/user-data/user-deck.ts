@@ -1,4 +1,4 @@
-export default interface UserDeck {
+export interface UserDeck {
   deckId: number
   member1: number
   member2: number

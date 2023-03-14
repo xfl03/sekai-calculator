@@ -1,4 +1,4 @@
-export default interface UserChallengeLiveSoloDeck {
+export interface UserChallengeLiveSoloDeck {
   characterId: number
   leader: number
   support1: number

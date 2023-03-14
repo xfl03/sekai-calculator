@@ -1,4 +1,4 @@
-export default interface CommonResource {
+export interface CommonResource {
   resourceId?: number
   resourceType: string
   resourceLevel?: number

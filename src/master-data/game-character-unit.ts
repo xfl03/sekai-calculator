@@ -1,4 +1,4 @@
-export default interface GameCharacterUnit {
+export interface GameCharacterUnit {
   id: number
   gameCharacterId: number
   unit: string

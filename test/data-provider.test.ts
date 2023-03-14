@@ -1,4 +1,4 @@
-import type DataProvider from '../src/common/data-provider'
+import { type DataProvider } from '../src'
 import { readFileSync } from 'fs'
 
 // 用于测试的用户数据

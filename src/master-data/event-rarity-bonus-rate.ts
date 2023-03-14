@@ -1,4 +1,4 @@
-export default interface EventRarityBonusRate {
+export interface EventRarityBonusRate {
   id: number
   cardRarityType: string
   masterRank: number
