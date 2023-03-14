@@ -106,3 +106,4 @@ dist
 .idea/
 mock-user-data.json
 build/
+**/.DS_Store
