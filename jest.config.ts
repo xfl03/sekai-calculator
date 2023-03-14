@@ -14,7 +14,7 @@ export default {
   // cacheDirectory: "/private/var/folders/2n/mglwc6xs4vj6zgct5kjg6s6r0000gn/T/jest_dx",
 
   // Automatically clear mock calls, instances, contexts and results before every test
-  clearMocks: true,
+  clearMocks: false,
 
   // Indicates whether the coverage information should be collected while executing the test
   collectCoverage: true,

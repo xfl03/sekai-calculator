@@ -3,10 +3,14 @@ import { readFileSync } from 'fs'
 
 // 用于测试的用户数据
 const mockUserData = JSON.parse(readFileSync('mock-user-data.json', 'utf8'))
+const cache = new Map<string, any>()
 
 async function getJson (url: string): Promise<any> {
+  if (cache.has(url)) return cache.get(url)
   const res = await fetch(url)
-  return await res.json()
+  const json = await res.json()
+  cache.set(url, json)
+  return json
 }
 
 /**

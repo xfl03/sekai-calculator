@@ -5,9 +5,14 @@ import type EventDeckBonus from '../master-data/event-deck-bonus'
 import type EventCard from '../master-data/event-card'
 import type EventRarityBonusRate from '../master-data/event-rarity-bonus-rate'
 import type GameCharacterUnit from '../master-data/game-character-unit'
+import type UserDeck from '../user-data/user-deck'
+import { findOrThrow } from '../util/array-util'
+import DeckCalculator from '../card-deck/deck-calculator'
 
 export default class EventCalculator {
+  private readonly deckCalculator: DeckCalculator
   public constructor (private readonly dataProvider: DataProvider) {
+    this.deckCalculator = new DeckCalculator(dataProvider)
   }
 
   /**
@@ -26,8 +31,8 @@ export default class EventCalculator {
         // 无指定角色
         if (eventDeckBonus.gameCharacterUnitId === undefined) return Math.max(v, eventDeckBonus.bonusRate)
 
-        const gameCharacterUnit = gameCharacterUnits.find(it => it.id === eventDeckBonus.gameCharacterUnitId)
-        if (gameCharacterUnit === undefined) throw new Error('game character unit not found')
+        const gameCharacterUnit = findOrThrow(gameCharacterUnits,
+          unit => unit.id === eventDeckBonus.gameCharacterUnitId)
 
         // 角色不匹配
         if (gameCharacterUnit.gameCharacterId !== card.characterId) return v
@@ -54,8 +59,7 @@ export default class EventCalculator {
 
     // 计算角色、属性加成
     let eventBonus = 0
-    const card = cards.find(it => it.id === userCard.cardId)
-    if (card === undefined) throw new Error('card not found')
+    const card = findOrThrow(cards, it => it.id === userCard.cardId)
     eventBonus += await this.getEventDeckBonus(eventId, card)
 
     // 计算当期卡牌加成
@@ -65,12 +69,22 @@ export default class EventCalculator {
     }
 
     // 计算突破等级加成
-    const masterRankBonus = eventRarityBonusRates
-      .find((it: any) => it.cardRarityType === card.cardRarityType && it.masterRank === userCard.masterRank)
-    if (masterRankBonus === undefined) throw new Error('master rank bonus not found')
+    const masterRankBonus = findOrThrow(eventRarityBonusRates,
+      it => it.cardRarityType === card.cardRarityType && it.masterRank === userCard.masterRank)
     eventBonus += masterRankBonus.bonusRate
 
     // 实际使用的时候还得/100
     return eventBonus
+  }
+
+  /**
+   * 计算用户卡组的活动加成
+   * @param userDeck 用户卡组
+   * @param eventId 活动ID
+   */
+  public async getDeckEventBonus (userDeck: UserDeck, eventId: number): Promise<number> {
+    const deckCards = await this.deckCalculator.getDeckCards(userDeck)
+    return await deckCards.reduce(async (v, it) =>
+      await this.getCardEventBonus(it, eventId) + await v, Promise.resolve(0))
   }
 }

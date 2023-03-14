@@ -1,7 +1,9 @@
 import EventCalculator from '../src/event-point/event-calculator'
 import { getTestDataProvider } from './data-provider.test'
+import type UserDeck from '../src/user-data/user-deck'
 
-const instance = new EventCalculator(getTestDataProvider())
+const dataProvider = getTestDataProvider()
+const instance = new EventCalculator(dataProvider)
 // 同属性同角色四星、当期卡、5破
 test('50+20+15', async () => {
   await instance.getCardEventBonus({
@@ -19,5 +21,13 @@ test('40+0+0', async () => {
     masterRank: 0
   }, 88).then(it => {
     expect(it).toBe(40)
+  })
+})
+
+// 选一个卡组算加成，按mock的数据应该是275%加成
+test('deck', async () => {
+  const userDecks = await dataProvider.getUserData('userDecks') as UserDeck[]
+  await instance.getDeckEventBonus(userDecks[0], 88).then(it => {
+    expect(it).toBe(275)
   })
 })
