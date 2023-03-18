@@ -2,14 +2,15 @@ import { type DataProvider } from '../common/data-provider'
 import { type Card } from '../master-data/card'
 import { type GameCharacter } from '../master-data/game-character'
 import { findOrThrow } from '../util/array-util'
-import { type UserCard } from '../user-data/user-card'
-import { type CardEpisode } from '../master-data/card-episode'
-import { type MasterLesson } from '../master-data/master-lesson'
-import { type CharacterRank } from '../master-data/character-rank'
-import { type UserCharacter } from '../user-data/user-character'
+import { CardPowerCalculator } from './card-power-calculator'
+import { CardSkillCalculator } from './card-skill-calculator'
 
 export class CardCalculator {
+  private readonly powerCalculator: CardPowerCalculator
+  private readonly skillCalculator: CardSkillCalculator
   public constructor (private readonly dataProvider: DataProvider) {
+    this.powerCalculator = new CardPowerCalculator(dataProvider)
+    this.skillCalculator = new CardSkillCalculator(dataProvider)
   }
 
   /**
@@ -24,71 +25,6 @@ export class CardCalculator {
     if (card.supportUnit !== 'none') units.push(card.supportUnit)
     units.push(findOrThrow(gameCharacters, it => it.id === card.characterId).unit)
     return units
-  }
-
-  /**
-   * 获取卡牌基础综合力（含卡牌等级、觉醒、突破等级、前后篇），这部分综合力直接显示在卡牌右上角，分为3个子属性
-   * @param userCard 用户卡牌（要看卡牌等级、觉醒状态、突破等级、前后篇解锁状态）
-   * @param card 卡牌
-   * @private
-   */
-  private async getCardBasePowers (userCard: UserCard, card: Card): Promise<number[]> {
-    const cardEpisodes = await this.dataProvider.getMasterData('cardEpisodes') as CardEpisode[]
-    const masterLessons = await this.dataProvider.getMasterData('masterLessons') as MasterLesson[]
-
-    const ret = [0, 0, 0]
-    // 等级
-    const cardParameters = card.cardParameters.filter(it => it.cardLevel === userCard.level)
-    const params = ['param1', 'param2', 'param3']// cardParameterType的枚举
-    params.forEach((param, i) => {
-      ret[i] = findOrThrow(cardParameters, it => it.cardParameterType === param).power
-    })
-    // 觉醒
-    if (userCard.specialTrainingStatus === 'done') {
-      ret[0] += card.specialTrainingPower1BonusFixed
-      ret[1] += card.specialTrainingPower2BonusFixed
-      ret[2] += card.specialTrainingPower3BonusFixed
-    }
-    // 剧情
-    const episodes = userCard.episodes.filter(it => it.scenarioStatus === 'already_read')
-      .map(it => findOrThrow(cardEpisodes, e => e.id === it.cardEpisodeId))
-    for (const episode of episodes) {
-      ret[0] += episode.power1BonusFixed
-      ret[1] += episode.power2BonusFixed
-      ret[2] += episode.power3BonusFixed
-    }
-    // 突破
-    const usedMasterLessons = masterLessons
-      .filter((it: any) => it.cardRarityType === card.cardRarityType && it.masterRank <= userCard.masterRank)
-    for (const masterLesson of usedMasterLessons) {
-      ret[0] += masterLesson.power1BonusFixed
-      ret[1] += masterLesson.power2BonusFixed
-      ret[2] += masterLesson.power3BonusFixed
-    }
-    return ret
-  }
-
-  private async getAreaItemBonusPower (
-    basePower: number[], unit: string, sameUnit: boolean, attr: string, sameAttr: boolean
-  ): Promise<number> {
-    return 0
-  }
-
-  /**
-   * 获取卡牌角色加成综合力
-   * @param basePower 卡牌基础综合力
-   * @param characterId 角色ID
-   * @private
-   */
-  private async getCharacterBonusPower (basePower: number[], characterId: number): Promise<number> {
-    const characterRanks = await this.dataProvider.getMasterData('characterRanks') as CharacterRank[]
-    const userCharacters = await this.dataProvider.getUserData('userCharacters') as UserCharacter[]
-
-    const userCharacter = findOrThrow(userCharacters, it => it.characterId === characterId)
-    const characterRank = findOrThrow(characterRanks,
-      it => it.characterId === userCharacter.characterId && it.characterRank === userCharacter.characterRank)
-    const rates = [characterRank.power1BonusRate, characterRank.power2BonusRate, characterRank.power3BonusRate]
-    return rates.reduce((v, it, i) => v + Math.floor(basePower[i] * it / 100), 0)
   }
 }
 
@@ -107,28 +43,57 @@ export interface CardDetail {
 /**
  * 用于记录在不同的同组合、同属性加成的情况下的综合力或加分技能
  */
-class CardDetailMap {
+export class CardDetailMap {
   public min = Number.MAX_SAFE_INTEGER
   public max = Number.MIN_SAFE_INTEGER
   public values = new Map<string, number>()
 
-  public set (unit: string, attr: string, value: number): void {
+  /**
+   * 设定给定情况下的值
+   * 为了减少内存消耗，人数并非在所有情况下均为实际值，可能会用1代表混组
+   * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）
+   * @param unitMember 该组合对应的人数（用于受组合影响的技能时，1-5、其他情况，5人为同组、1人为混组）
+   * @param attrMember 卡牌属性对应的人数（5人为同色、1人为混色）
+   * @param value 设定的值
+   */
+  public set (unit: string, unitMember: number, attrMember: number, value: number): void {
     this.min = Math.min(this.min, value)
     this.max = Math.max(this.max, value)
-    this.values.set(CardDetailMap.getKey(unit, attr), value)
-  }
-
-  public get (unit: string, attr: string): number | undefined {
-    return this.values.get(CardDetailMap.getKey(unit, attr))
+    this.values.set(CardDetailMap.getKey(unit, unitMember, attrMember), value)
   }
 
   /**
-   * 用于map的key
-   * @param unit 组合（mix代表非同组合加成）
-   * @param attr 属性（mix代表非同属性加成）
+   * 获取给定情况下的值
+   * 会返回最合适的值，如果给定的条件与卡牌完全不符会给出异常
+   * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）
+   * @param unitMember 该组合对应的人数（真实值）
+   * @param attrMember 卡牌属性对应的人数（真实值）
    */
-  public static getKey (unit: string, attr: string): string {
-    return `${unit}-${attr}`
+  public get (unit: string, unitMember: number, attrMember: number): number {
+    // 因为实际上的attrMember取值只能是5和1，直接优化掉
+    const attrMember0 = attrMember === 5 ? 5 : 1
+    let best = this.getInternal(unit, unitMember, attrMember0)
+    if (best !== undefined) return best
+    // 有可能unitMember在混组的时候优化成1了
+    best = this.getInternal(unit, unitMember === 5 ? 5 : 1, attrMember0)
+    if (best !== undefined) return best
+    // 如果这还找不到，说明给的情况就不对
+    throw new Error('case not found')
+  }
+
+  private getInternal (unit: string, unitMember: number, attrMember: number): number | undefined {
+    return this.values.get(CardDetailMap.getKey(unit, unitMember, attrMember))
+  }
+
+  /**
+   * 实际用于Map的key，用于内部调用避免创建对象的开销
+   * @param unit 组合
+   * @param unitMember 组合人数
+   * @param attrMember 属性人数
+   * @private
+   */
+  public static getKey (unit: string, unitMember: number, attrMember: number): string {
+    return `${unit}-${unitMember}-${attrMember}`
   }
 
   /**

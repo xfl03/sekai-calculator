@@ -3,7 +3,7 @@ export interface AreaItemLevel {
   level: number
   targetUnit: string
   targetCardAttr: string
-  targetGameCharacterId: number
+  targetGameCharacterId?: number
   power1BonusRate: number
   power1AllMatchBonusRate: number
   power2BonusRate: number
