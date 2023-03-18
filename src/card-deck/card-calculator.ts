@@ -52,8 +52,8 @@ export class CardDetailMap {
    * 设定给定情况下的值
    * 为了减少内存消耗，人数并非在所有情况下均为实际值，可能会用1代表混组
    * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）
-   * @param unitMember 该组合对应的人数（用于受组合影响的技能时，1-5、其他情况，5人为同组、1人为混组）
-   * @param attrMember 卡牌属性对应的人数（5人为同色、1人为混色）
+   * @param unitMember 该组合对应的人数（用于受组合影响的技能时，1-5、其他情况，5人为同组、1人为混组或无影响）
+   * @param attrMember 卡牌属性对应的人数（5人为同色、1人为混色或无影响）
    * @param value 设定的值
    */
   public set (unit: string, unitMember: number, attrMember: number, value: number): void {
@@ -76,6 +76,9 @@ export class CardDetailMap {
     if (best !== undefined) return best
     // 有可能unitMember在混组的时候优化成1了
     best = this.getInternal(unit, unitMember === 5 ? 5 : 1, attrMember0)
+    if (best !== undefined) return best
+    // 有可能因为技能是固定数值，attrMember、unitMember都优化成1了，组合直接为any
+    best = this.getInternal('any', 1, 1)
     if (best !== undefined) return best
     // 如果这还找不到，说明给的情况就不对
     throw new Error('case not found')

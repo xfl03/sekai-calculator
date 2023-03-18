@@ -20,7 +20,7 @@ export class CardPowerCalculator {
    * @param cardUnits 卡牌所属组合（因为计算逻辑在CardCalculator里面，传参来避免循环构造）
    * @param userAreaItemLevels 用户拥有的区域道具等级
    */
-  public async getCardPowerMap (
+  public async getCardPower (
     userCard: UserCard, card: Card, cardUnits: string[], userAreaItemLevels: AreaItemLevel[]
   ): Promise<CardDetailMap> {
     const ret = new CardDetailMap()
@@ -30,16 +30,16 @@ export class CardPowerCalculator {
     // 处理区域道具，每个组合和属性需要计算4种情况
     for (const unit of cardUnits) {
       // 同组合、同属性
-      ret.set(unit, 5, 5, await this.getCardPower(
+      ret.set(unit, 5, 5, await this.getPower(
         card, basePower, characterBonus, userAreaItemLevels, unit, true, true))
       // 同组合、混属性
-      ret.set(unit, 5, 1, await this.getCardPower(
+      ret.set(unit, 5, 1, await this.getPower(
         card, basePower, characterBonus, userAreaItemLevels, unit, true, false))
       // 混组合、同属性
-      ret.set(unit, 1, 5, await this.getCardPower(
+      ret.set(unit, 1, 5, await this.getPower(
         card, basePower, characterBonus, userAreaItemLevels, unit, false, true))
       // 混组合、混属性
-      ret.set(unit, 1, 1, await this.getCardPower(
+      ret.set(unit, 1, 1, await this.getPower(
         card, basePower, characterBonus, userAreaItemLevels, unit, false, false))
     }
     return ret
@@ -57,7 +57,7 @@ export class CardPowerCalculator {
    * @param sameAttr 是否同色
    * @private
    */
-  private async getCardPower (
+  private async getPower (
     card: Card, basePower: number[], characterBonus: number,
     userAreaItemLevels: AreaItemLevel[], unit: string, sameUnit: boolean, sameAttr: boolean
   ): Promise<number> {

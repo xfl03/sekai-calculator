@@ -5,5 +5,10 @@ export interface Honor {
   honorRarity: string
   name: string
   assetbundleName: string
-  levels: Array<{ honorId: number, level: number, bonus: number, description: string }>
+  levels: Array<{
+    honorId: number
+    level: number
+    bonus: number
+    description: string
+  }>
 }
