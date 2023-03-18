@@ -1,8 +1,8 @@
 export interface UserCard {
   cardId: number
-  level?: number
-  skillLevel?: number
+  level: number
+  skillLevel: number
   masterRank: number
   specialTrainingStatus?: string
-  episodes?: Array<{ cardEpisodeId: number, scenarioStatus: string }>
+  episodes: Array<{ cardEpisodeId: number, scenarioStatus: string }>
 }

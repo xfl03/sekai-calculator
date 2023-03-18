@@ -85,7 +85,7 @@ export class EventCalculator {
   public async getDeckEventBonus (userDeck: UserDeck, eventId: number): Promise<number> {
     const deckCards = await this.deckCalculator.getDeckCards(userDeck)
     return await deckCards.reduce(async (v, it) =>
-      await this.getCardEventBonus(it, eventId) + await v, Promise.resolve(0))
+      await v + await this.getCardEventBonus(it, eventId), Promise.resolve(0))
   }
 
   /**

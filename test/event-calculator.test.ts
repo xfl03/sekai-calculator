@@ -7,7 +7,10 @@ const instance = new EventCalculator(dataProvider)
 test('50+20+15', async () => {
   await instance.getCardEventBonus({
     cardId: 606,
-    masterRank: 5
+    masterRank: 5,
+    episodes: [],
+    level: 1,
+    skillLevel: 1
   }, 88).then(it => {
     expect(it).toBe(85)
   })
@@ -17,7 +20,10 @@ test('50+20+15', async () => {
 test('40+0+0', async () => {
   await instance.getCardEventBonus({
     cardId: 337,
-    masterRank: 0
+    masterRank: 0,
+    episodes: [],
+    level: 1,
+    skillLevel: 1
   }, 88).then(it => {
     expect(it).toBe(40)
   })
