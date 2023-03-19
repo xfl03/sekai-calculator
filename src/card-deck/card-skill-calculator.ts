@@ -1,7 +1,7 @@
 import { type DataProvider } from '../common/data-provider'
 import { type UserCard } from '../user-data/user-card'
 import { type Card } from '../master-data/card'
-import { findOrThrow } from '../util/array-util'
+import { findOrThrow } from '../util/collection-util'
 import { type Skill } from '../master-data/skill'
 import { CardDetailMap } from './card-calculator'
 
@@ -18,10 +18,7 @@ export class CardSkillCalculator {
   Promise<{ scoreUp: CardDetailMap, lifeRecovery: number }> {
     const scoreUpMap = new CardDetailMap()
     const detail = await this.getSkillDetail(userCard, card)
-    if (detail.scoreUpEnhance === undefined) {
-      // 固定加成
-      scoreUpMap.set('any', 1, 1, detail.scoreUp)
-    } else {
+    if (detail.scoreUpEnhance !== undefined) {
       // 组合相关，处理不同人数的情况
       for (let i = 1; i <= 5; ++i) {
         // 如果全部同队还有一次额外加成
@@ -29,6 +26,8 @@ export class CardSkillCalculator {
         scoreUpMap.set(detail.scoreUpEnhance.unit, i, 1, scoreUp)
       }
     }
+    // 固定加成，即便是组分也有个保底加成
+    scoreUpMap.set('any', 1, 1, detail.scoreUp)
     return { scoreUp: scoreUpMap, lifeRecovery: detail.lifeRecovery }
   }
 

@@ -1,9 +1,11 @@
 import { type DataProvider } from '../common/data-provider'
 import { type Card } from '../master-data/card'
 import { type GameCharacter } from '../master-data/game-character'
-import { findOrThrow } from '../util/array-util'
+import { findOrThrow } from '../util/collection-util'
 import { CardPowerCalculator } from './card-power-calculator'
 import { CardSkillCalculator } from './card-skill-calculator'
+import { type UserCard } from '../user-data/user-card'
+import { type AreaItemLevel } from '../master-data/area-item-level'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
@@ -26,18 +28,42 @@ export class CardCalculator {
     units.push(findOrThrow(gameCharacters, it => it.id === card.characterId).unit)
     return units
   }
+
+  /**
+   * 获取卡牌详细数据
+   * @param userCard 用户卡牌
+   * @param userAreaItemLevels 用户拥有的区域道具等级
+   */
+  public async getCardDetail (userCard: UserCard, userAreaItemLevels: AreaItemLevel[]): Promise<CardDetail> {
+    const cards = await this.dataProvider.getMasterData('cards') as Card[]
+    const card = findOrThrow(cards, it => it.id === userCard.cardId)
+    const units = await this.getCardUnits(card)
+
+    const skill = await this.skillCalculator.getCardSkill(userCard, card)
+    const power =
+      await this.powerCalculator.getCardPower(userCard, card, units, userAreaItemLevels)
+    return {
+      cardId: card.id,
+      units,
+      attr: card.attr,
+      power,
+      scoreSkill: skill.scoreUp,
+      lifeSkill: skill.lifeRecovery
+    }
+  }
 }
 
 /**
  * 计算过程中使用的卡牌详情信息
  */
 export interface CardDetail {
+  cardId: number
   units: string[]
   attr: string
   power: CardDetailMap
   scoreSkill: CardDetailMap
   lifeSkill: number
-  eventBonus: number
+  eventBonus?: number
 }
 
 /**
@@ -50,7 +76,7 @@ export class CardDetailMap {
 
   /**
    * 设定给定情况下的值
-   * 为了减少内存消耗，人数并非在所有情况下均为实际值，可能会用1代表混组
+   * 为了减少内存消耗，人数并非在所有情况下均为实际值，可能会用1代表混组或无影响
    * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）
    * @param unitMember 该组合对应的人数（用于受组合影响的技能时，1-5、其他情况，5人为同组、1人为混组或无影响）
    * @param attrMember 卡牌属性对应的人数（5人为同色、1人为混色或无影响）

@@ -13,13 +13,21 @@ async function getJson (url: string): Promise<any> {
   return json
 }
 
+async function getLocalMasterData (key: string): Promise<any> {
+  if (cache.has(key)) return cache.get(key)
+  const json = JSON.parse(readFileSync(`sekai-master-db-diff/${key}.json`, 'utf8'))
+  cache.set(key, json)
+  return json
+}
+
 /**
  * 用于测试的数据源
  */
 export class TestDataProvider implements DataProvider {
   public static INSTANCE = new TestDataProvider()
   async getMasterData (key: string): Promise<any> {
-    return await getJson(`https://sekai-world.github.io/sekai-master-db-diff/${key}.json`)
+    // return await getJson(`https://sekai-world.github.io/sekai-master-db-diff/${key}.json`)
+    return await getLocalMasterData(key)
   }
 
   async getUserData (key: string): Promise<any> {
