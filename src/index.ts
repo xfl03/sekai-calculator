@@ -1,7 +1,7 @@
 // Calculator
 export * from './event-point/event-calculator'
-// export { CardCalculator } from './card-deck/card-calculator'
-// export * from './card-deck/deck-calculator'
+export * from './card-deck/card-calculator'
+export * from './card-deck/deck-calculator'
 export * from './live-score/live-calculator'
 
 // Common struct
