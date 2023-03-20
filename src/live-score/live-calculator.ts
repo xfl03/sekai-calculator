@@ -116,22 +116,6 @@ export class LiveCalculator {
       : (mapOrUndefined(liveSkills, liveSkill => findOrThrow(deckDetail.skill, it => it.cardId === liveSkill.cardId)))
     return await this.getLiveDetailByDeck(deckDetail, musicMeta, liveType, skills)
   }
-
-  /**
-   * 计算Live详情
-   * @param deckId 卡组ID
-   * @param musicId 歌曲ID
-   * @param musicDiff 歌曲难度
-   * @param liveType Live类型
-   * @param liveSkills 技能顺序（多人或最佳留空）
-   */
-  public async getLiveDetailById (
-    deckId: number, musicId: number, musicDiff: string, liveType: LiveType,
-    liveSkills: LiveSkill[] | undefined = undefined
-  ): Promise<LiveDetail> {
-    return await this.getLiveDetail(
-      await this.deckCalculator.getDeckCardsById(deckId), musicId, musicDiff, liveType, liveSkills)
-  }
 }
 
 export interface LiveDetail {

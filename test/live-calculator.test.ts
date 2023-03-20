@@ -1,27 +1,29 @@
 import { TestDataProvider } from './data-provider.test'
-import { LiveCalculator, LiveType } from '../src'
+import { LiveCalculator, LiveType, DeckService } from '../src'
 
-const dataProvider = TestDataProvider.INSTANCE
-const liveCalculator = new LiveCalculator(dataProvider)
+const liveCalculator = new LiveCalculator(TestDataProvider.INSTANCE)
+const deckService = new DeckService(TestDataProvider.INSTANCE)
 
-// 卡组回复量为250，分数不好说
+// LUKA卡组回复量为0，分数不好说
 test('solo', async () => {
-  await liveCalculator.getLiveDetailById(
-    1, 1, 'easy', LiveType.SOLO).then(it => {
-    expect(it.life).toBe(1250)
-    expect(it.tap).toBe(76)
-    expect(it.time).toBe(123.2)
-    expect(it.score).not.toBe(0)
+  const deck = await deckService.getChallengeLiveSoloDeckCards(await deckService.getChallengeLiveSoloDeck(24))
+  await liveCalculator.getLiveDetail(
+    deck, 104, 'master', LiveType.SOLO).then(it => {
+    expect(it.life).toBe(1000)
+    expect(it.tap).toBe(533)
+    expect(it.time).toBe(117.6)
+    expect(it.score).toBeGreaterThan(2200000)
   })
 })
 
 // 多人卡组无回复
 test('multi', async () => {
-  await liveCalculator.getLiveDetailById(
-    1, 1, 'easy', LiveType.MULTI).then(it => {
+  const deck = await deckService.getDeckCards(await deckService.getDeck(1))
+  await liveCalculator.getLiveDetail(
+    deck, 1, 'easy', LiveType.MULTI).then(it => {
     expect(it.life).toBe(1000)
     expect(it.tap).toBe(76)
     expect(it.time).toBe(123.2)
-    expect(it.score).not.toBe(0)
+    expect(it.score).toBeGreaterThan(1000000)
   })
 })
