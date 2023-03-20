@@ -91,14 +91,13 @@ export class DeckCalculator {
 
   /**
    * 根据用户卡组获得卡组详情
-   * @param userDeck 用户卡组
+   * @param deckCards 用户卡组中的用户卡牌
    */
-  public async getDeckDetail (userDeck: UserDeck): Promise<DeckDetail> {
+  public async getDeckDetail (deckCards: UserCard[]): Promise<DeckDetail> {
     const areaItemLevels = await this.dataProvider.getMasterData('areaItemLevels') as AreaItemLevel[]
     const userAreas = await this.dataProvider.getUserData('userAreas') as UserArea[]
     const userItemLevels = userAreas.flatMap(it => it.areaItems).map(areaItem =>
       findOrThrow(areaItemLevels, it => it.areaItemId === areaItem.areaItemId && it.level === areaItem.level))
-    const deckCards = await this.getDeckCards(userDeck)
     const cardDetails = await Promise.all(
       deckCards.map(async it => await this.cardCalculator.getCardDetail(it, userItemLevels)))
     return await this.getDeckDetailByCards(cardDetails, await this.getHonorBonusPower())
@@ -109,11 +108,12 @@ export class DeckCalculator {
    * @param deckId 卡组ID
    */
   public async getDeckDetailById (deckId: number): Promise<DeckDetail> {
-    return await this.getDeckDetail(await this.getDeck(deckId))
+    return await this.getDeckDetail(await this.getDeckCardsById(deckId))
   }
 }
 
 export interface DeckDetail {
   power: number
-  skill: Array<{ cardId: number, scoreUp: number, lifeRecovery: number }>
+  skill: SkillDetail[]
 }
+export interface SkillDetail { cardId?: number, scoreUp: number, lifeRecovery: number }

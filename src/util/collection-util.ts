@@ -17,3 +17,14 @@ export function getOrDefault<K, V> (map: Map<K, V>, key: K, defaultValue: V): V 
 export function computeWithDefault<K, V> (map: Map<K, V>, key: K, defaultValue: V, action: (v: V) => V): void {
   map.set(key, action(getOrDefault(map, key, defaultValue)))
 }
+
+export function duplicateObj<T> (obj: T, times: number): T[] {
+  const ret: T[] = []
+  for (let i = 0; i < times; ++i) ret.push(obj)
+  return ret
+}
+
+export function mapOrUndefined<K, V> (arr: K[] | undefined, fun: (k: K) => V): V[] | undefined {
+  if (arr === undefined) return undefined
+  return arr.map(fun)
+}

@@ -108,3 +108,4 @@ mock-user-data.json
 build/
 **/.DS_Store
 sekai-master-db-diff/
+music_metas.json
