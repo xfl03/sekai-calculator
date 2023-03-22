@@ -47,6 +47,6 @@ export class TestDataProvider implements DataProvider {
 test('master data', async () => {
   await TestDataProvider.INSTANCE.getMasterData('gameCharacterUnits').then(it => {
     expect(it).not.toBeUndefined()
-    expect(it.length).not.toBe(0)
+    expect(it.length).toBe(56)
   })
 })

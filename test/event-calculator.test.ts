@@ -1,34 +1,15 @@
 import { TestDataProvider } from './data-provider.test'
-import { EventCalculator, DeckService, CardEventCalculator } from '../src'
+import { CardEventCalculator, DeckService, EventCalculator, EventLiveType } from '../src'
 
 const eventCalculator = new EventCalculator(TestDataProvider.INSTANCE)
 const cardEventCalculator = new CardEventCalculator(TestDataProvider.INSTANCE)
 const deckService = new DeckService(TestDataProvider.INSTANCE)
-// 同属性同角色四星、当期卡、5破
-test('50+20+15', async () => {
-  await cardEventCalculator.getCardEventBonus({
-    cardId: 606,
-    masterRank: 5,
-    episodes: [],
-    level: 1,
-    skillLevel: 1
-  }, 88).then(it => {
-    expect(it).toBe(85)
+// 选一张卡算加成，15+15
+test('card', async () => {
+  await cardEventCalculator.getCardEventBonus(await deckService.getUserCard(510), 88).then(it => {
+    expect(it).toBe(30)
   })
 })
-
-// 同属性无支援组合V家四星、非当期卡、0破
-test('40+0+0', async () => {
-  await cardEventCalculator.getCardEventBonus({
-    cardId: 337,
-    masterRank: 0,
-    episodes: [],
-    level: 1,
-    skillLevel: 1
-  }, 88).then(it => {
-    expect(it).toBe(40)
-  })
-}, 10000)
 
 // 选一个卡组算加成，按mock的数据应该是275%加成
 test('deck', async () => {
@@ -36,4 +17,15 @@ test('deck', async () => {
   await eventCalculator.getDeckEventBonus(deck, 88).then(it => {
     expect(it).toBe(275)
   })
+})
+
+test('challenge point', () => {
+  const point = EventCalculator.getEventPoint(EventLiveType.CHALLENGE, 1919810)
+  expect(point).toBe(23400)
+})
+
+test('multi point', () => {
+  const point = EventCalculator.getEventPoint(
+    EventLiveType.MULTI, 2394321, 106, 260, 15, 8888888)
+  expect(point).toBe(15045)
 })

@@ -1,5 +1,5 @@
 import { type DataProvider } from '../common/data-provider'
-import { DeckCalculator, type DeckDetail, type SkillDetail } from '../card-deck/deck-calculator'
+import { DeckCalculator, type DeckDetail, type SkillDetail } from '../deck-information/deck-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
 import { duplicateObj, findOrThrow, mapOrUndefined } from '../util/collection-util'
