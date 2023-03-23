@@ -25,7 +25,14 @@ test('challenge point', () => {
 })
 
 test('multi point', () => {
-  const point = EventCalculator.getEventPoint(
-    EventLiveType.MULTI, 2394321, 106, 260, 15, 8888888)
-  expect(point).toBe(15045)
+  expect(EventCalculator.getEventPoint(
+    EventLiveType.MULTI, 2499999, 100, 260, 15, 8888888)).toBe(14580)
+  expect(EventCalculator.getEventPoint(
+    EventLiveType.MULTI, 1907777, 100, 125, 15, 8888888)).toBe(7920)
+  expect(EventCalculator.getEventPoint(
+    EventLiveType.MULTI, 2302222, 100, 315, 10, 8888888)).toBe(10700)
+  expect(EventCalculator.getEventPoint(
+    EventLiveType.MULTI, 2070000, 100, 285, 23, 8888888)).toBe(21597)
+  expect(EventCalculator.getEventPoint(
+    EventLiveType.MULTI, 2061111, 100, 271, 10, 8888888)).toBe(9050)
 })

@@ -2,10 +2,11 @@ import { type DataProvider } from '../common/data-provider'
 import { DeckCalculator, type DeckDetail, type SkillDetail } from '../deck-information/deck-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
-import { duplicateObj, findOrThrow, mapOrUndefined } from '../util/collection-util'
+import { duplicateObj, findOrThrow } from '../util/collection-util'
 
 export class LiveCalculator {
   private readonly deckCalculator: DeckCalculator
+
   public constructor (private readonly dataProvider: DataProvider) {
     this.deckCalculator = new DeckCalculator(dataProvider)
   }
@@ -86,13 +87,44 @@ export class LiveCalculator {
    * @param deckDetail 卡组信息
    * @private
    */
-  private getMultiLiveSkill (deckDetail: DeckDetail): SkillDetail {
+  private static getMultiLiveSkill (deckDetail: DeckDetail): SkillDetail {
     // 多人技能加分效果计算规则：C位100%发动、其他位置20%发动
     const scoreUp = deckDetail.skill.reduce((v, it, i) =>
       v + (i === 0 ? it.scoreUp : (it.scoreUp / 5)), 0)
     // 奶判只看C位
     const lifeRecovery = deckDetail.skill[0].lifeRecovery
-    return { scoreUp, lifeRecovery }
+    return {
+      scoreUp,
+      lifeRecovery
+    }
+  }
+
+  /**
+   * 按给定顺序计算单人技能效果
+   * @param liveSkills 技能顺序（可以小于6个）
+   * @param skillDetails 卡组技能信息
+   * @private
+   */
+  private static getSoloLiveSkill (
+    liveSkills: LiveSkill[] | undefined, skillDetails: SkillDetail[]
+  ): SkillDetail[] | undefined {
+    if (liveSkills === undefined) return undefined
+    const skills = liveSkills.map(liveSkill => findOrThrow(skillDetails, it => it.cardId === liveSkill.cardId))
+    const ret: SkillDetail[] = []
+    // 因为可能会有技能空缺，先将无任何效果的技能放入6个位置
+    for (let i = 0; i < 6; ++i) {
+      ret.push({
+        scoreUp: 0,
+        lifeRecovery: 0
+      })
+    }
+    // 将C位重复技能以外的技能分配到合适的位置
+    for (let i = 0; i < skills.length - 1; ++i) {
+      ret[i] = skills[i]
+    }
+    // 将C位重复技能固定放在最后
+    ret[5] = skills[skills.length - 1]
+    return ret
   }
 
   /**
@@ -112,8 +144,8 @@ export class LiveCalculator {
     const deckDetail = await this.deckCalculator.getDeckDetail(deckCards)
     // 如果给定了顺序就按顺序发动，没有的话就重复6次当前卡组的多人技能效果
     const skills = liveType === LiveType.MULTI
-      ? duplicateObj(this.getMultiLiveSkill(deckDetail), 6)
-      : (mapOrUndefined(liveSkills, liveSkill => findOrThrow(deckDetail.skill, it => it.cardId === liveSkill.cardId)))
+      ? duplicateObj(LiveCalculator.getMultiLiveSkill(deckDetail), 6)
+      : LiveCalculator.getSoloLiveSkill(liveSkills, deckDetail.skill)
     return await this.getLiveDetailByDeck(deckDetail, musicMeta, liveType, skills)
   }
 }
