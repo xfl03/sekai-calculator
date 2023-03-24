@@ -6,13 +6,18 @@ import { CardPowerCalculator } from './card-power-calculator'
 import { CardSkillCalculator } from './card-skill-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type AreaItemLevel } from '../master-data/area-item-level'
+import { type CardDetailMap } from './card-detail-map'
+import { type UserArea } from '../user-data/user-area'
+import { CardEventCalculator } from '../event-point/card-event-calculator'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
   private readonly skillCalculator: CardSkillCalculator
+  private readonly eventCalculator: CardEventCalculator
   public constructor (private readonly dataProvider: DataProvider) {
     this.powerCalculator = new CardPowerCalculator(dataProvider)
     this.skillCalculator = new CardSkillCalculator(dataProvider)
+    this.eventCalculator = new CardEventCalculator(dataProvider)
   }
 
   /**
@@ -33,8 +38,11 @@ export class CardCalculator {
    * 获取卡牌详细数据
    * @param userCard 用户卡牌
    * @param userAreaItemLevels 用户拥有的区域道具等级
+   * @param eventId 活动ID（如果非0则计算活动加成）
    */
-  public async getCardDetail (userCard: UserCard, userAreaItemLevels: AreaItemLevel[]): Promise<CardDetail> {
+  public async getCardDetail (
+    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], eventId: number = 0
+  ): Promise<CardDetail> {
     const cards = await this.dataProvider.getMasterData('cards') as Card[]
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
     const units = await this.getCardUnits(card)
@@ -42,14 +50,45 @@ export class CardCalculator {
     const skill = await this.skillCalculator.getCardSkill(userCard, card)
     const power =
       await this.powerCalculator.getCardPower(userCard, card, units, userAreaItemLevels)
+    const eventBonus = eventId === 0 ? undefined : await this.eventCalculator.getCardEventBonus(userCard, eventId)
     return {
       cardId: card.id,
+      characterId: card.characterId,
       units,
       attr: card.attr,
       power,
       scoreSkill: skill.scoreUp,
-      lifeSkill: skill.lifeRecovery
+      lifeSkill: skill.lifeRecovery,
+      eventBonus
     }
+  }
+
+  /**
+   * 批量获取卡牌详细数据
+   * @param userCards 多张卡牌
+   * @param eventId 活动ID（如果非0则计算活动加成）
+   */
+  public async batchGetCardDetail (userCards: UserCard[], eventId: number = 0): Promise<CardDetail[]> {
+    const areaItemLevels = await this.dataProvider.getMasterData('areaItemLevels') as AreaItemLevel[]
+    const userAreas = await this.dataProvider.getUserData('userAreas') as UserArea[]
+    const userItemLevels = userAreas.flatMap(it => it.areaItems).map(areaItem =>
+      findOrThrow(areaItemLevels, it => it.areaItemId === areaItem.areaItemId && it.level === areaItem.level))
+    return await Promise.all(
+      userCards.map(async it => await this.getCardDetail(it, userItemLevels, eventId)))
+  }
+
+  /**
+   * 卡牌是否肯定劣于另一张卡牌
+   * @param cardDetail0 卡牌
+   * @param cardDetail1 另一张卡牌
+   */
+  public static isCertainlyLessThan (
+    cardDetail0: CardDetail, cardDetail1: CardDetail
+  ): boolean {
+    return cardDetail0.power.isCertainlyLessThen(cardDetail1.power) &&
+      cardDetail0.scoreSkill.isCertainlyLessThen(cardDetail1.scoreSkill) &&
+      (cardDetail0.eventBonus === undefined || cardDetail1.eventBonus === undefined ||
+        cardDetail0.eventBonus < cardDetail1.eventBonus)
   }
 }
 
@@ -58,80 +97,11 @@ export class CardCalculator {
  */
 export interface CardDetail {
   cardId: number
+  characterId: number
   units: string[]
   attr: string
   power: CardDetailMap
   scoreSkill: CardDetailMap
   lifeSkill: number
   eventBonus?: number
-}
-
-/**
- * 用于记录在不同的同组合、同属性加成的情况下的综合力或加分技能
- */
-export class CardDetailMap {
-  public min = Number.MAX_SAFE_INTEGER
-  public max = Number.MIN_SAFE_INTEGER
-  public values = new Map<string, number>()
-
-  /**
-   * 设定给定情况下的值
-   * 为了减少内存消耗，人数并非在所有情况下均为实际值，可能会用1代表混组或无影响
-   * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）
-   * @param unitMember 该组合对应的人数（用于受组合影响的技能时，1-5、其他情况，5人为同组、1人为混组或无影响）
-   * @param attrMember 卡牌属性对应的人数（5人为同色、1人为混色或无影响）
-   * @param value 设定的值
-   */
-  public set (unit: string, unitMember: number, attrMember: number, value: number): void {
-    this.min = Math.min(this.min, value)
-    this.max = Math.max(this.max, value)
-    this.values.set(CardDetailMap.getKey(unit, unitMember, attrMember), value)
-  }
-
-  /**
-   * 获取给定情况下的值
-   * 会返回最合适的值，如果给定的条件与卡牌完全不符会给出异常
-   * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）
-   * @param unitMember 该组合对应的人数（真实值）
-   * @param attrMember 卡牌属性对应的人数（真实值）
-   */
-  public get (unit: string, unitMember: number, attrMember: number): number {
-    // 因为实际上的attrMember取值只能是5和1，直接优化掉
-    const attrMember0 = attrMember === 5 ? 5 : 1
-    let best = this.getInternal(unit, unitMember, attrMember0)
-    if (best !== undefined) return best
-    // 有可能unitMember在混组的时候优化成1了
-    best = this.getInternal(unit, unitMember === 5 ? 5 : 1, attrMember0)
-    if (best !== undefined) return best
-    // 有可能因为技能是固定数值，attrMember、unitMember都优化成1了，组合直接为any
-    best = this.getInternal('any', 1, 1)
-    if (best !== undefined) return best
-    // 如果这还找不到，说明给的情况就不对
-    throw new Error('case not found')
-  }
-
-  private getInternal (unit: string, unitMember: number, attrMember: number): number | undefined {
-    return this.values.get(CardDetailMap.getKey(unit, unitMember, attrMember))
-  }
-
-  /**
-   * 实际用于Map的key，用于内部调用避免创建对象的开销
-   * @param unit 组合
-   * @param unitMember 组合人数
-   * @param attrMember 属性人数
-   * @private
-   */
-  public static getKey (unit: string, unitMember: number, attrMember: number): string {
-    return `${unit}-${unitMember}-${attrMember}`
-  }
-
-  /**
-   * 是否肯定比另一个范围小
-   * 如果几个维度都比其他小，这张卡可以在自动组卡时舍去
-   * @param another 另一个范围
-   */
-  public isCertainlyLessThen (another: CardDetailMap): boolean {
-    // 如果自己最大值比别人最小值还要小，说明自己肯定小
-    return this.max < another.min
-  }
 }

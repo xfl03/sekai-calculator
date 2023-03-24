@@ -7,7 +7,7 @@ import { findOrThrow } from '../util/collection-util'
 import { type AreaItemLevel } from '../master-data/area-item-level'
 import { type CharacterRank } from '../master-data/character-rank'
 import { type UserCharacter } from '../user-data/user-character'
-import { CardDetailMap } from './card-calculator'
+import { CardDetailMap } from './card-detail-map'
 
 export class CardPowerCalculator {
   public constructor (private readonly dataProvider: DataProvider) {

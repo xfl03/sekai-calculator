@@ -3,7 +3,7 @@ import { type UserCard } from '../user-data/user-card'
 import { type Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
 import { type Skill } from '../master-data/skill'
-import { CardDetailMap } from './card-calculator'
+import { CardDetailMap } from './card-detail-map'
 
 export class CardSkillCalculator {
   public constructor (private readonly dataProvider: DataProvider) {

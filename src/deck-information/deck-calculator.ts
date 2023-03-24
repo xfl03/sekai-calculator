@@ -3,9 +3,7 @@ import type { UserCard } from '../user-data/user-card'
 import { type UserHonor } from '../user-data/user-honor'
 import { type Honor } from '../master-data/honor'
 import { CardCalculator, type CardDetail } from './card-calculator'
-import { type AreaItemLevel } from '../master-data/area-item-level'
 import { computeWithDefault, findOrThrow, getOrThrow } from '../util/collection-util'
-import { type UserArea } from '../user-data/user-area'
 
 export class DeckCalculator {
   private readonly cardCalculator: CardCalculator
@@ -16,7 +14,7 @@ export class DeckCalculator {
   /**
    * 获取称号的综合力加成（与卡牌无关、根据称号累加）
    */
-  private async getHonorBonusPower (): Promise<number> {
+  public async getHonorBonusPower (): Promise<number> {
     const honors = await this.dataProvider.getMasterData('honors') as Honor[]
     const userHonors = await this.dataProvider.getUserData('userHonors') as UserHonor[]
     return userHonors
@@ -32,7 +30,7 @@ export class DeckCalculator {
    * @param cardDetails 处理好的卡牌详情（数组长度1-5，兼容挑战Live）
    * @param honorBonus 称号加成
    */
-  public async getDeckDetailByCards (cardDetails: CardDetail[], honorBonus: number): Promise<DeckDetail> {
+  public static getDeckDetailByCards (cardDetails: CardDetail[], honorBonus: number): DeckDetail {
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
     const map = new Map<string, number>()
     for (const cardDetail of cardDetails) {
@@ -66,13 +64,8 @@ export class DeckCalculator {
    * @param deckCards 用户卡组中的用户卡牌
    */
   public async getDeckDetail (deckCards: UserCard[]): Promise<DeckDetail> {
-    const areaItemLevels = await this.dataProvider.getMasterData('areaItemLevels') as AreaItemLevel[]
-    const userAreas = await this.dataProvider.getUserData('userAreas') as UserArea[]
-    const userItemLevels = userAreas.flatMap(it => it.areaItems).map(areaItem =>
-      findOrThrow(areaItemLevels, it => it.areaItemId === areaItem.areaItemId && it.level === areaItem.level))
-    const cardDetails = await Promise.all(
-      deckCards.map(async it => await this.cardCalculator.getCardDetail(it, userItemLevels)))
-    return await this.getDeckDetailByCards(cardDetails, await this.getHonorBonusPower())
+    return DeckCalculator.getDeckDetailByCards(
+      await this.cardCalculator.batchGetCardDetail(deckCards), await this.getHonorBonusPower())
   }
 }
 

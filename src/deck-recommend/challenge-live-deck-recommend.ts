@@ -1,0 +1,39 @@
+import { type DataProvider } from '../common/data-provider'
+import { type UserChallengeLiveSoloDeck } from '../user-data/user-challenge-live-solo-deck'
+import { findOrThrow } from '../util/collection-util'
+import { DeckService } from '../deck-information/deck-service'
+import { BaseDeckRecommend } from './base-deck-recommend'
+import { type UserCard } from '../user-data/user-card'
+import { type Card } from '../master-data/card'
+import { LiveType } from '../live-score/live-calculator'
+
+export class ChallengeLiveDeckRecommend {
+  private readonly baseRecommend: BaseDeckRecommend
+
+  public constructor (private readonly dataProvider: DataProvider) {
+    this.baseRecommend = new BaseDeckRecommend(dataProvider)
+  }
+
+  /**
+   * 推荐挑战Live用的卡牌
+   * 根据Live分数高低推荐
+   * @param characterId 角色ID
+   * @param musicId 歌曲ID
+   * @param musicDiff 歌曲难度
+   * @param member 限制人数（2-5、默认5）
+   */
+  public async recommendChallengeLiveDeck (
+    characterId: number, musicId: number, musicDiff: string, member: number = 5
+  ): Promise<{ score: number, deck: UserChallengeLiveSoloDeck }> {
+    const userCards = await this.dataProvider.getUserData('userCards') as UserCard[]
+    const cards = await this.dataProvider.getMasterData('cards') as Card[]
+    const characterCards = userCards
+      .filter(userCard => findOrThrow(cards, it => it.id === userCard.cardId).characterId === characterId)
+    const recommend = await this.baseRecommend.recommendHighScoreDeck(characterCards, musicId, musicDiff,
+      BaseDeckRecommend.getLiveScoreFunction(LiveType.SOLO), member)
+    return {
+      score: recommend.score,
+      deck: DeckService.toUserChallengeLiveSoloDeck(recommend.deckCards, characterId)
+    }
+  }
+}

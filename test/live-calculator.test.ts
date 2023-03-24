@@ -12,7 +12,7 @@ test('solo', async () => {
     expect(it.life).toBe(1000)
     expect(it.tap).toBe(533)
     expect(it.time).toBe(117.6)
-    expect(it.score).toBeGreaterThan(2200000)
+    expect(it.score).toBe(2265354)
   })
 })
 

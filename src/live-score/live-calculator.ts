@@ -17,7 +17,7 @@ export class LiveCalculator {
    * @param liveType Live类型
    * @private
    */
-  private getBaseScore (musicMeta: MusicMeta, liveType: LiveType): number {
+  private static getBaseScore (musicMeta: MusicMeta, liveType: LiveType): number {
     switch (liveType) {
       case LiveType.SOLO:
         return musicMeta.base_score
@@ -34,7 +34,7 @@ export class LiveCalculator {
    * @param liveType Live类型
    * @private
    */
-  private getSkillScore (musicMeta: MusicMeta, liveType: LiveType): number[] {
+  private static getSkillScore (musicMeta: MusicMeta, liveType: LiveType): number[] {
     switch (liveType) {
       case LiveType.SOLO:
         return musicMeta.skill_score_solo
@@ -50,24 +50,29 @@ export class LiveCalculator {
    * @param deckDetail 卡组信息
    * @param musicMeta 歌曲数据
    * @param liveType Live类型
-   * @param skillDetails 技能顺序（小于5后面技能留空、如果是多人需要放入加权后的累加值），如果留空则计算最佳技能
+   * @param skillDetails 技能顺序（小于5后面技能留空、如果是多人需要放入加权后的累加值），如果留空则计算当前技能多人效果或最佳技能
    * @param multiPowerSum 多人队伍综合力总和（用于计算活跃加成，留空则使用5倍当前卡组综合力）
    */
-  public async getLiveDetailByDeck (
+  public static getLiveDetailByDeck (
     deckDetail: DeckDetail, musicMeta: MusicMeta, liveType: LiveType,
     skillDetails: SkillDetail[] | undefined = undefined, multiPowerSum: number = 0
-  ): Promise<LiveDetail> {
-    // 确定技能发动顺序，未指定则直接按效果排序
-    const bestSkill = skillDetails === undefined
-    const skills = bestSkill
-      ? [...deckDetail.skill, deckDetail.skill[0]].sort((a, b) => a.scoreUp - b.scoreUp)
-      : skillDetails
+  ): LiveDetail {
+    // 确定技能发动顺序，未指定则直接按效果排序或多人重复当前技能
+    const skills = skillDetails !== undefined
+      ? skillDetails
+      : (liveType === LiveType.MULTI
+          ? duplicateObj(LiveCalculator.getMultiLiveSkill(deckDetail), 6)
+        // 按效果排序前5个技能、第6个固定为C位
+          : [...[...deckDetail.skill].sort((a, b) => a.scoreUp - b.scoreUp),
+              deckDetail.skill[0]])
     // 与技能无关的分数比例
-    const baseRate = this.getBaseScore(musicMeta, liveType)
+    const baseRate = LiveCalculator.getBaseScore(musicMeta, liveType)
     // 技能分数比例，如果是最佳技能计算则按加成排序（复制一下防止影响原数组顺序）
-    const skillRate = bestSkill
-      ? [...this.getSkillScore(musicMeta, liveType)].sort((a, b) => a - b)
-      : this.getSkillScore(musicMeta, liveType)
+    const skillScores = [...LiveCalculator.getSkillScore(musicMeta, liveType)]
+    const skillRate = skillDetails === undefined
+      // 按效果排序前5次技能、第6个固定（与上面的技能排序相对应）
+      ? [...skillScores.slice(0, 5).sort((a, b) => a - b), skillScores[5]]
+      : skillScores
     // 计算总的分数比例
     const rate = baseRate + skills.reduce((v, it, i) => v + it.scoreUp * skillRate[i] / 100, 0)
     const life = skills.reduce((v, it) => v + it.lifeRecovery, 0)
@@ -142,11 +147,11 @@ export class LiveCalculator {
     const musicMetas = await this.dataProvider.getMusicMeta() as MusicMeta[]
     const musicMeta = findOrThrow(musicMetas, it => it.music_id === musicId && it.difficulty === musicDiff)
     const deckDetail = await this.deckCalculator.getDeckDetail(deckCards)
-    // 如果给定了顺序就按顺序发动，没有的话就重复6次当前卡组的多人技能效果
+    // 如果给定了顺序就按顺序发动，没有的话就按最优发动
     const skills = liveType === LiveType.MULTI
-      ? duplicateObj(LiveCalculator.getMultiLiveSkill(deckDetail), 6)
+      ? undefined
       : LiveCalculator.getSoloLiveSkill(liveSkills, deckDetail.skill)
-    return await this.getLiveDetailByDeck(deckDetail, musicMeta, liveType, skills)
+    return LiveCalculator.getLiveDetailByDeck(deckDetail, musicMeta, liveType, skills)
   }
 }
 
