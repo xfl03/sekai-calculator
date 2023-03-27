@@ -89,8 +89,10 @@ export class CardPowerCalculator {
       ret[2] += card.specialTrainingPower3BonusFixed
     }
     // 剧情
-    const episodes = userCard.episodes.filter(it => it.scenarioStatus === 'already_read')
-      .map(it => findOrThrow(cardEpisodes, e => e.id === it.cardEpisodeId))
+    const episodes = userCard.episodes === undefined
+      ? []// 有一张卡没剧情
+      : userCard.episodes.filter(it => it.scenarioStatus === 'already_read')
+        .map(it => findOrThrow(cardEpisodes, e => e.id === it.cardEpisodeId))
     for (const episode of episodes) {
       ret[0] += episode.power1BonusFixed
       ret[1] += episode.power2BonusFixed

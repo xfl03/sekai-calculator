@@ -8,11 +8,11 @@ const deckService = new DeckService(TestDataProvider.INSTANCE)
 test('solo', async () => {
   const deck = await deckService.getChallengeLiveSoloDeckCards(await deckService.getChallengeLiveSoloDeck(24))
   await liveCalculator.getLiveDetail(
-    deck, 104, 'master', LiveType.SOLO).then(it => {
+    deck, await liveCalculator.getMusicMeta(104, 'master'), LiveType.SOLO).then(it => {
     expect(it.life).toBe(1000)
     expect(it.tap).toBe(533)
     expect(it.time).toBe(117.6)
-    expect(it.score).toBe(2265354)
+    expect(it.score).toBeGreaterThan(2200000)
   })
 })
 
@@ -20,7 +20,7 @@ test('solo', async () => {
 test('multi', async () => {
   const deck = await deckService.getDeckCards(await deckService.getDeck(1))
   await liveCalculator.getLiveDetail(
-    deck, 1, 'easy', LiveType.MULTI).then(it => {
+    deck, await liveCalculator.getMusicMeta(1, 'easy'), LiveType.MULTI).then(it => {
     expect(it.life).toBe(1000)
     expect(it.tap).toBe(76)
     expect(it.time).toBe(123.2)

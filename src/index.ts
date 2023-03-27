@@ -10,6 +10,10 @@ export * from './event-point/card-event-calculator'
 export * from './event-point/event-calculator'
 export * from './live-score/live-calculator'
 
+// Recommend
+export * from './deck-recommend/challenge-live-deck-recommend'
+export * from './deck-recommend/event-deck-recommend'
+
 // Common struct
 // export * from './common/music-meta'
 export * from './common/data-provider'

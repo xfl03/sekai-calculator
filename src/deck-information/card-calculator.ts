@@ -88,7 +88,7 @@ export class CardCalculator {
     return cardDetail0.power.isCertainlyLessThen(cardDetail1.power) &&
       cardDetail0.scoreSkill.isCertainlyLessThen(cardDetail1.scoreSkill) &&
       (cardDetail0.eventBonus === undefined || cardDetail1.eventBonus === undefined ||
-        cardDetail0.eventBonus < cardDetail1.eventBonus)
+        cardDetail0.eventBonus <= cardDetail1.eventBonus)
   }
 }
 

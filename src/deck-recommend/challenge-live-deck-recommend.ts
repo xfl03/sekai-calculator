@@ -30,7 +30,7 @@ export class ChallengeLiveDeckRecommend {
     const characterCards = userCards
       .filter(userCard => findOrThrow(cards, it => it.id === userCard.cardId).characterId === characterId)
     const recommend = await this.baseRecommend.recommendHighScoreDeck(characterCards, musicId, musicDiff,
-      BaseDeckRecommend.getLiveScoreFunction(LiveType.SOLO), member)
+      BaseDeckRecommend.getLiveScoreFunction(LiveType.SOLO), 0, true, member)
     return {
       score: recommend.score,
       deck: DeckService.toUserChallengeLiveSoloDeck(recommend.deckCards, characterId)

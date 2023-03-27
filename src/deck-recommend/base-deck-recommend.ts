@@ -4,17 +4,16 @@ import { DeckCalculator } from '../deck-information/deck-calculator'
 import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
-import { findOrThrow } from '../util/collection-util'
+import { containsAny, findOrThrow } from '../util/collection-util'
+import { EventCalculator } from '../event-point/event-calculator'
 
 export class BaseDeckRecommend {
   private readonly cardCalculator: CardCalculator
   private readonly deckCalculator: DeckCalculator
-  private readonly liveCalculator: LiveCalculator
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.cardCalculator = new CardCalculator(dataProvider)
     this.deckCalculator = new DeckCalculator(dataProvider)
-    this.liveCalculator = new LiveCalculator(dataProvider)
   }
 
   /**
@@ -24,30 +23,34 @@ export class BaseDeckRecommend {
    * @private
    */
   private static filterCard (cardDetails: CardDetail[]): CardDetail[] {
-    // 两两比较，只要有一张卡综合、技能都肯定比它强，就排除掉这张卡
-    const afterFilter = cardDetails.filter(cardDetail => {
-      for (const anotherCardDetail of cardDetails) {
-        if (CardCalculator.isCertainlyLessThan(cardDetail, anotherCardDetail)) return false
+    // 根据活动加成，排除掉一些加成较低的卡牌
+    let afterFilter = cardDetails
+    for (const minBonus of [65, 50, 40, 25, 15, 0]) {
+      const bonusFilter = cardDetails.filter(cardDetail =>
+        !(cardDetail.eventBonus !== undefined && cardDetail.eventBonus < minBonus))
+      if (bonusFilter.length >= 5) {
+        afterFilter = bonusFilter
+        break
       }
-      return true
-    })
+    }
+    // console.log(afterFilter.map(it => it.cardId))
     // console.log(`Origin:${cardDetails.length} After:${afterFilter.length}`)
-    // 如果筛选完只剩不到5张卡的话，那就甭筛选了
-    return (afterFilter.length < 5 ? cardDetails : afterFilter)
-      .sort((a, b) => a.cardId - b.cardId)
+    return afterFilter
   }
 
   /**
    * 使用递归寻找最佳卡组
    * @param cardDetails 参与计算的卡牌
    * @param scoreFunc 获得分数的公式
+   * @param isChallengeLive 是否挑战Live（人员可重复）
    * @param member 人数限制（2-5、默认5）
    * @param deckCards 计算过程中的当前卡组
+   * @param deckCharacters 当前卡组的人员
    * @private
    */
   private static findBestCards (
-    cardDetails: CardDetail[], scoreFunc: (deckCards: CardDetail[]) => number,
-    member: number = 5, deckCards: CardDetail[] = []
+    cardDetails: CardDetail[], scoreFunc: (deckCards: CardDetail[]) => number, isChallengeLive: boolean = false,
+    member: number = 5, deckCards: CardDetail[] = [], deckCharacters: number[] = []
   ): { score: number, deckCards: CardDetail[] } {
     // 已经是完整卡组，计算当前卡组的值
     if (deckCards.length === member) {
@@ -61,15 +64,25 @@ export class BaseDeckRecommend {
       score: 0,
       deckCards: cardDetails
     }
+    let preCard = cardDetails[0]
     for (const card of cardDetails) {
       // 跳过已经重复出现过的卡牌
       if (deckCards.includes(card)) continue
+      // 跳过重复角色
+      if (!isChallengeLive && deckCharacters.includes(card.characterId)) continue
       // C位一定是技能最好的卡牌，跳过技能比C位还好的
       if (deckCards.length >= 1 && deckCards[0].scoreSkill.isCertainlyLessThen(card.scoreSkill)) continue
-      // 因为后面4个卡牌完全等价，要求按照卡牌ID顺序排序，减少重复情况
-      if (deckCards.length >= 2 && card.cardId < deckCards[deckCards.length - 1].cardId) continue
+      // 为了优化性能，必须和C位同色或同组
+      if (deckCards.length >= 1 && card.attr !== deckCards[0].attr && !containsAny(deckCards[0].units, card.units)) {
+        continue
+      }
+      // 如果比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
+      if (CardCalculator.isCertainlyLessThan(card, preCard)) continue
+      preCard = card
       // 递归，寻找所有情况
-      const result = BaseDeckRecommend.findBestCards(cardDetails, scoreFunc, member, [...deckCards, card])
+      const result = BaseDeckRecommend.findBestCards(
+        cardDetails, scoreFunc, isChallengeLive, member,
+        [...deckCards, card], [...deckCharacters, card.characterId])
       // 更新答案
       if (result.score > ans.score) ans = result
     }
@@ -82,17 +95,21 @@ export class BaseDeckRecommend {
    * @param musicId 歌曲ID
    * @param musicDiff 歌曲难度
    * @param scoreFunc 分数计算公式
+   * @param eventId 活动ID（如果要计算活动PT的话）
+   * @param isChallengeLive 是否挑战Live（人员可重复）
    * @param member 限制人数（2-5、默认5）
    */
   public async recommendHighScoreDeck (
-    userCards: UserCard[], musicId: number, musicDiff: string, scoreFunc: ScoreFunction, member: number = 5
+    userCards: UserCard[], musicId: number, musicDiff: string, scoreFunc: ScoreFunction, eventId: number = 0,
+    isChallengeLive: boolean = false, member: number = 5
   ): Promise<{ score: number, deckCards: UserCard[] }> {
     const musicMetas = await this.dataProvider.getMusicMeta() as MusicMeta[]
     const musicMeta = findOrThrow(musicMetas, it => it.music_id === musicId && it.difficulty === musicDiff)
-    const cardDetails = BaseDeckRecommend.filterCard(await this.cardCalculator.batchGetCardDetail(userCards))
+    const cardDetails = BaseDeckRecommend.filterCard(await this.cardCalculator.batchGetCardDetail(userCards, eventId))
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
+    // console.log(`All:${userCards.length}, used:${cardDetails.length}`)
     const best = BaseDeckRecommend.findBestCards(cardDetails,
-      deckCards => scoreFunc(musicMeta, honorBonus, deckCards), member)
+      deckCards => scoreFunc(musicMeta, honorBonus, deckCards), isChallengeLive, member)
     return {
       score: best.score,
       deckCards: best.deckCards.map(deckCard => findOrThrow(userCards, it => it.cardId === deckCard.cardId))
@@ -105,8 +122,16 @@ export class BaseDeckRecommend {
    */
   public static getLiveScoreFunction (liveType: LiveType): ScoreFunction {
     return (musicMeta, honorBonus, deckCards) =>
-      LiveCalculator.getLiveDetailByDeck(
-        DeckCalculator.getDeckDetailByCards(deckCards, honorBonus), musicMeta, liveType).score
+      LiveCalculator.getLiveScoreByDeck(deckCards, honorBonus, musicMeta, liveType)
+  }
+
+  /**
+   * 获取计算活动PT的函数
+   * @param liveType Live类型
+   */
+  public static getEventPointFunction (liveType: LiveType): ScoreFunction {
+    return (musicMeta, honorBonus, deckCards) =>
+      EventCalculator.getDeckEventPoint(deckCards, honorBonus, musicMeta, liveType)
   }
 }
 

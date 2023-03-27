@@ -3,12 +3,23 @@ import { DeckCalculator, type DeckDetail, type SkillDetail } from '../deck-infor
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
 import { duplicateObj, findOrThrow } from '../util/collection-util'
+import { type CardDetail } from '../deck-information/card-calculator'
 
 export class LiveCalculator {
   private readonly deckCalculator: DeckCalculator
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.deckCalculator = new DeckCalculator(dataProvider)
+  }
+
+  /**
+   * 获取歌曲数据
+   * @param musicId 歌曲ID
+   * @param musicDiff 歌曲难度
+   */
+  public async getMusicMeta (musicId: number, musicDiff: string): Promise<MusicMeta> {
+    const musicMetas = await this.dataProvider.getMusicMeta() as MusicMeta[]
+    return findOrThrow(musicMetas, it => it.music_id === musicId && it.difficulty === musicDiff)
   }
 
   /**
@@ -20,8 +31,10 @@ export class LiveCalculator {
   private static getBaseScore (musicMeta: MusicMeta, liveType: LiveType): number {
     switch (liveType) {
       case LiveType.SOLO:
+      case LiveType.CHALLENGE:
         return musicMeta.base_score
       case LiveType.MULTI:
+      case LiveType.CHEERFUL:
         return musicMeta.base_score + musicMeta.fever_score
       case LiveType.AUTO:
         return musicMeta.base_score_auto
@@ -37,8 +50,10 @@ export class LiveCalculator {
   private static getSkillScore (musicMeta: MusicMeta, liveType: LiveType): number[] {
     switch (liveType) {
       case LiveType.SOLO:
+      case LiveType.CHALLENGE:
         return musicMeta.skill_score_solo
       case LiveType.MULTI:
+      case LiveType.CHEERFUL:
         return musicMeta.skill_score_multi
       case LiveType.AUTO:
         return musicMeta.skill_score_auto
@@ -135,23 +150,34 @@ export class LiveCalculator {
   /**
    * 计算Live详情
    * @param deckCards 用户卡组中的用户卡牌
-   * @param musicId 歌曲ID
-   * @param musicDiff 歌曲难度
+   * @param musicMeta 歌曲信息
    * @param liveType Live类型
    * @param liveSkills 技能顺序（多人或最佳留空）
    */
   public async getLiveDetail (
-    deckCards: UserCard[], musicId: number, musicDiff: string, liveType: LiveType,
+    deckCards: UserCard[], musicMeta: MusicMeta, liveType: LiveType,
     liveSkills: LiveSkill[] | undefined = undefined
   ): Promise<LiveDetail> {
-    const musicMetas = await this.dataProvider.getMusicMeta() as MusicMeta[]
-    const musicMeta = findOrThrow(musicMetas, it => it.music_id === musicId && it.difficulty === musicDiff)
     const deckDetail = await this.deckCalculator.getDeckDetail(deckCards)
     // 如果给定了顺序就按顺序发动，没有的话就按最优发动
     const skills = liveType === LiveType.MULTI
       ? undefined
       : LiveCalculator.getSoloLiveSkill(liveSkills, deckDetail.skill)
     return LiveCalculator.getLiveDetailByDeck(deckDetail, musicMeta, liveType, skills)
+  }
+
+  /**
+   * 获取卡组Live分数
+   * @param deckCards 卡组
+   * @param honorBonus 称号加成
+   * @param musicMeta 歌曲信息
+   * @param liveType Live类型
+   */
+  public static getLiveScoreByDeck (
+    deckCards: CardDetail[], honorBonus: number, musicMeta: MusicMeta, liveType: LiveType
+  ): number {
+    return LiveCalculator.getLiveDetailByDeck(
+      DeckCalculator.getDeckDetailByCards(deckCards, honorBonus), musicMeta, liveType).score
   }
 }
 
@@ -169,6 +195,8 @@ export interface LiveSkill {
 
 export enum LiveType {
   SOLO = 'solo',
+  AUTO = 'auto',
+  CHALLENGE = 'challenge',
   MULTI = 'multi',
-  AUTO = 'auto'
+  CHEERFUL = 'cheerful',
 }
