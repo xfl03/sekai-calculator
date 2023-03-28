@@ -4,7 +4,7 @@ import { DeckCalculator } from '../deck-information/deck-calculator'
 import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
-import { containsAny, findOrThrow } from '../util/collection-util'
+import { computeWithDefault, containsAny, findOrThrow } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
 
 export class BaseDeckRecommend {
@@ -14,6 +14,27 @@ export class BaseDeckRecommend {
   public constructor (private readonly dataProvider: DataProvider) {
     this.cardCalculator = new CardCalculator(dataProvider)
     this.deckCalculator = new DeckCalculator(dataProvider)
+  }
+
+  /**
+   * 判断某属性或者组合角色数量至少5个
+   * @param cardDetails 卡牌
+   * @private
+   */
+  private static canMakeEventDeck (cardDetails: CardDetail[]): boolean {
+    // 统计组合或者属性的次数
+    const map = new Map<string, Set<number>>()
+    for (const cardDetail of cardDetails) {
+      computeWithDefault(map, cardDetail.attr, new Set(), it => it.add(cardDetail.characterId))
+      for (const unit of cardDetail.units) {
+        computeWithDefault(map, unit, new Set(), it => it.add(cardDetail.characterId))
+      }
+    }
+    // 如果有任何一个大于等于5，就没问题
+    for (const v of map.values()) {
+      if (v.size >= 5) return true
+    }
+    return false
   }
 
   /**
@@ -28,7 +49,7 @@ export class BaseDeckRecommend {
     for (const minBonus of [65, 50, 40, 25, 15, 0]) {
       const bonusFilter = cardDetails.filter(cardDetail =>
         !(cardDetail.eventBonus !== undefined && cardDetail.eventBonus < minBonus))
-      if (bonusFilter.length >= 5) {
+      if (this.canMakeEventDeck(bonusFilter)) {
         afterFilter = bonusFilter
         break
       }
@@ -54,8 +75,9 @@ export class BaseDeckRecommend {
   ): { score: number, deckCards: CardDetail[] } {
     // 已经是完整卡组，计算当前卡组的值
     if (deckCards.length === member) {
+      const score = scoreFunc(deckCards)
       return {
-        score: scoreFunc(deckCards),
+        score,
         deckCards
       }
     }
@@ -86,6 +108,8 @@ export class BaseDeckRecommend {
       // 更新答案
       if (result.score > ans.score) ans = result
     }
+    // 在最外层检查一下是否成功组队
+    if (deckCards.length === 0 && ans.score === 0) throw new Error(`Cannot find deck in ${cardDetails.length} cards`)
     return ans
   }
 
@@ -102,7 +126,8 @@ export class BaseDeckRecommend {
     userCards: UserCard[], musicMeta: MusicMeta, scoreFunc: ScoreFunction, eventId: number = 0,
     isChallengeLive: boolean = false, member: number = 5
   ): Promise<{ score: number, deckCards: UserCard[] }> {
-    const cardDetails = BaseDeckRecommend.filterCard(await this.cardCalculator.batchGetCardDetail(userCards, eventId))
+    const cards = await this.cardCalculator.batchGetCardDetail(userCards, eventId)
+    const cardDetails = (isChallengeLive || eventId === 0) ? cards : BaseDeckRecommend.filterCard(cards)
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
     // console.log(`All:${userCards.length}, used:${cardDetails.length}`)
     const best = BaseDeckRecommend.findBestCards(cardDetails,
