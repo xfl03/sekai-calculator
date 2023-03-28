@@ -19,16 +19,19 @@ export class EventDeckRecommend {
    * @param eventId 活动ID
    * @param musicMeta 歌曲信息
    * @param liveType Live类型
+   * @param limit 需要推荐的卡组数量（按分数高到低）
    */
   public async recommendEventDeck (
-    eventId: number, musicMeta: MusicMeta, liveType: LiveType
-  ): Promise<{ point: number, deck: UserDeck }> {
+    eventId: number, musicMeta: MusicMeta, liveType: LiveType, limit: number = 1
+  ): Promise<Array<{ point: number, deck: UserDeck }>> {
     const userCards = await this.dataProvider.getUserData('userCards') as UserCard[]
     const recommend = await this.baseRecommend.recommendHighScoreDeck(userCards, musicMeta,
-      BaseDeckRecommend.getEventPointFunction(liveType), eventId)
-    return {
-      point: recommend.score,
-      deck: DeckService.toUserDeck(recommend.deckCards)
-    }
+      BaseDeckRecommend.getEventPointFunction(liveType), limit, eventId)
+    return recommend.map(it => {
+      return {
+        point: it.score,
+        deck: DeckService.toUserDeck(it.deckCards)
+      }
+    })
   }
 }

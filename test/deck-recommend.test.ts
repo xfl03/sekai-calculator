@@ -29,7 +29,7 @@ export async function maxUser (): Promise<void> {
 }
 
 test('challenge', async () => {
-  await maxUser()
+  // await maxUser()
   const deck = await deckService.getChallengeLiveSoloDeckCards({
     characterId: 24,
     leader: 510,
@@ -42,13 +42,13 @@ test('challenge', async () => {
   const liveDetail = await liveCalculator.getLiveDetail(deck, musicMeta, LiveType.SOLO)
   const score = liveDetail.score
   console.log(`Current score:${score}`)
-  await challengeRecommend.recommendChallengeLiveDeck(24, musicMeta).then(it => {
+  await challengeRecommend.recommendChallengeLiveDeck(24, musicMeta, 3).then(it => {
     console.log(it)
-    expect(it.score).toBeGreaterThanOrEqual(score)
+    expect(it[0].score).toBeGreaterThanOrEqual(score)
   })
 })
 test('event', async () => {
-  await maxUser()
+  // await maxUser()
   const musicMeta = await liveCalculator.getMusicMeta(74, 'master')
   const cardDetails = await cardCalculator.batchGetCardDetail(await deckService.getDeckCards({
     userId: 1145141919810,
@@ -65,8 +65,8 @@ test('event', async () => {
   const score = EventCalculator.getDeckEventPoint(
     cardDetails, await deckCalculator.getHonorBonusPower(), musicMeta, LiveType.MULTI)
   console.log(`Current score:${score}`)
-  await eventRecommend.recommendEventDeck(89, musicMeta, LiveType.MULTI).then(it => {
+  await eventRecommend.recommendEventDeck(89, musicMeta, LiveType.MULTI, 3).then(it => {
     console.log(it)
-    expect(it.point).toBeGreaterThanOrEqual(score)
+    expect(it[0].point).toBeGreaterThanOrEqual(score)
   })
 })

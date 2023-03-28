@@ -20,20 +20,23 @@ export class ChallengeLiveDeckRecommend {
    * 根据Live分数高低推荐
    * @param characterId 角色ID
    * @param musicMeta 歌曲信息
+   * @param limit 需要推荐的卡组数量（按分数高到低）
    * @param member 限制人数（2-5、默认5）
    */
   public async recommendChallengeLiveDeck (
-    characterId: number, musicMeta: MusicMeta, member: number = 5
-  ): Promise<{ score: number, deck: UserChallengeLiveSoloDeck }> {
+    characterId: number, musicMeta: MusicMeta, limit: number = 1, member: number = 5
+  ): Promise<Array<{ score: number, deck: UserChallengeLiveSoloDeck }>> {
     const userCards = await this.dataProvider.getUserData('userCards') as UserCard[]
     const cards = await this.dataProvider.getMasterData('cards') as Card[]
     const characterCards = userCards
       .filter(userCard => findOrThrow(cards, it => it.id === userCard.cardId).characterId === characterId)
     const recommend = await this.baseRecommend.recommendHighScoreDeck(characterCards, musicMeta,
-      BaseDeckRecommend.getLiveScoreFunction(LiveType.SOLO), 0, true, member)
-    return {
-      score: recommend.score,
-      deck: DeckService.toUserChallengeLiveSoloDeck(recommend.deckCards, characterId)
-    }
+      BaseDeckRecommend.getLiveScoreFunction(LiveType.SOLO), limit, 0, true, member)
+    return recommend.map(it => {
+      return {
+        score: it.score,
+        deck: DeckService.toUserChallengeLiveSoloDeck(it.deckCards, characterId)
+      }
+    })
   }
 }

@@ -4,7 +4,7 @@ import { DeckCalculator } from '../deck-information/deck-calculator'
 import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
-import { computeWithDefault, containsAny, findOrThrow } from '../util/collection-util'
+import { computeWithDefault, containsAny } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
 
 export class BaseDeckRecommend {
@@ -22,7 +22,7 @@ export class BaseDeckRecommend {
    * @private
    */
   private static canMakeEventDeck (cardDetails: CardDetail[]): boolean {
-    // 统计组合或者属性的次数
+    // 统计组合或者属性的不同角色出现次数
     const map = new Map<string, Set<number>>()
     for (const cardDetail of cardDetails) {
       computeWithDefault(map, cardDetail.attr, new Set(), it => it.add(cardDetail.characterId))
@@ -38,7 +38,7 @@ export class BaseDeckRecommend {
   }
 
   /**
-   * 过滤纳入计算的卡牌，排除掉各个维度都不行的卡牌
+   * 过滤纳入计算的卡牌，排除掉活动加成不行的卡牌
    * 返回的卡牌按卡牌ID排序
    * @param cardDetails 卡牌详情
    * @private
@@ -61,8 +61,10 @@ export class BaseDeckRecommend {
 
   /**
    * 使用递归寻找最佳卡组
+   * （按分数高到低排序）
    * @param cardDetails 参与计算的卡牌
    * @param scoreFunc 获得分数的公式
+   * @param limit 需要推荐的卡组数量（按分数高到低）
    * @param isChallengeLive 是否挑战Live（人员可重复）
    * @param member 人数限制（2-5、默认5）
    * @param deckCards 计算过程中的当前卡组
@@ -70,22 +72,19 @@ export class BaseDeckRecommend {
    * @private
    */
   private static findBestCards (
-    cardDetails: CardDetail[], scoreFunc: (deckCards: CardDetail[]) => number, isChallengeLive: boolean = false,
-    member: number = 5, deckCards: CardDetail[] = [], deckCharacters: number[] = []
-  ): { score: number, deckCards: CardDetail[] } {
+    cardDetails: CardDetail[], scoreFunc: (deckCards: CardDetail[]) => number, limit: number = 1,
+    isChallengeLive: boolean = false, member: number = 5, deckCards: CardDetail[] = [], deckCharacters: number[] = []
+  ): RecommendDeck[] {
     // 已经是完整卡组，计算当前卡组的值
     if (deckCards.length === member) {
       const score = scoreFunc(deckCards)
-      return {
+      return [{
         score,
         deckCards
-      }
+      }]
     }
     // 非完整卡组，继续遍历所有情况
-    let ans = {
-      score: 0,
-      deckCards: cardDetails
-    }
+    let ans: RecommendDeck[] = []
     let preCard = cardDetails[0]
     for (const card of cardDetails) {
       // 跳过已经重复出现过的卡牌
@@ -98,18 +97,23 @@ export class BaseDeckRecommend {
       if (deckCards.length >= 1 && card.attr !== deckCards[0].attr && !containsAny(deckCards[0].units, card.units)) {
         continue
       }
+      // 要求生成的卡组后面4个位置按卡牌ID排序
+      if (deckCards.length >= 2 && card.cardId < deckCards[deckCards.length - 1].cardId) continue
       // 如果比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
       if (CardCalculator.isCertainlyLessThan(card, preCard)) continue
       preCard = card
       // 递归，寻找所有情况
       const result = BaseDeckRecommend.findBestCards(
-        cardDetails, scoreFunc, isChallengeLive, member,
+        cardDetails, scoreFunc, limit, isChallengeLive, member,
         [...deckCards, card], [...deckCharacters, card.characterId])
-      // 更新答案
-      if (result.score > ans.score) ans = result
+      // 更新答案，按分数高到低排序、限制数量（可能用个堆来维护更合适）
+      ans = [...ans, ...result].sort((a, b) => b.score - a.score)
+      if (ans.length > limit) ans = ans.slice(0, limit)
     }
     // 在最外层检查一下是否成功组队
-    if (deckCards.length === 0 && ans.score === 0) throw new Error(`Cannot find deck in ${cardDetails.length} cards`)
+    if (deckCards.length === 0 && ans.length === 0) throw new Error(`Cannot find deck in ${cardDetails.length} cards`)
+
+    // 按分数从高到低排序、限制数量
     return ans
   }
 
@@ -118,24 +122,22 @@ export class BaseDeckRecommend {
    * @param userCards 参与推荐的卡牌
    * @param musicMeta 歌曲信息
    * @param scoreFunc 分数计算公式
+   * @param limit 需要推荐的卡组数量（按分数高到低）
    * @param eventId 活动ID（如果要计算活动PT的话）
    * @param isChallengeLive 是否挑战Live（人员可重复）
    * @param member 限制人数（2-5、默认5）
    */
   public async recommendHighScoreDeck (
-    userCards: UserCard[], musicMeta: MusicMeta, scoreFunc: ScoreFunction, eventId: number = 0,
+    userCards: UserCard[], musicMeta: MusicMeta, scoreFunc: ScoreFunction, limit: number = 1, eventId: number = 0,
     isChallengeLive: boolean = false, member: number = 5
-  ): Promise<{ score: number, deckCards: UserCard[] }> {
+  ): Promise<RecommendDeck[]> {
     const cards = await this.cardCalculator.batchGetCardDetail(userCards, eventId)
-    const cardDetails = (isChallengeLive || eventId === 0) ? cards : BaseDeckRecommend.filterCard(cards)
+    let cardDetails = (isChallengeLive || eventId === 0) ? cards : BaseDeckRecommend.filterCard(cards)
+    cardDetails = cardDetails.sort((a, b) => a.cardId - b.cardId)// 按ID排序
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
     // console.log(`All:${userCards.length}, used:${cardDetails.length}`)
-    const best = BaseDeckRecommend.findBestCards(cardDetails,
-      deckCards => scoreFunc(musicMeta, honorBonus, deckCards), isChallengeLive, member)
-    return {
-      score: best.score,
-      deckCards: best.deckCards.map(deckCard => findOrThrow(userCards, it => it.cardId === deckCard.cardId))
-    }
+    return BaseDeckRecommend.findBestCards(cardDetails,
+      deckCards => scoreFunc(musicMeta, honorBonus, deckCards), limit, isChallengeLive, member)
   }
 
   /**
@@ -158,3 +160,5 @@ export class BaseDeckRecommend {
 }
 
 export type ScoreFunction = (musicMeta: MusicMeta, honorBonus: number, deckCards: CardDetail[]) => number
+
+interface RecommendDeck { score: number, deckCards: CardDetail[] }
