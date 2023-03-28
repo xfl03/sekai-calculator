@@ -56,6 +56,18 @@ export class EventCalculator {
   }
 
   /**
+   * 获取卡组活动加成
+   * @param deckCards 卡组
+   */
+  public static getDeckBonus (deckCards: CardDetail[]): number | undefined {
+    // 如果没有预处理好活动加成，则返回空
+    for (const card of deckCards) {
+      if (card.eventBonus === undefined) return undefined
+    }
+    return deckCards.reduce((v, it) => v + (it.eventBonus === undefined ? 0 : it.eventBonus), 0)
+  }
+
+  /**
    * 获得卡组活动点数
    * @param deckCards 卡组
    * @param honorBonus 称号加成
@@ -63,7 +75,8 @@ export class EventCalculator {
    * @param liveType Live类型
    */
   public static getDeckEventPoint (deckCards: CardDetail[], honorBonus: number, musicMeta: MusicMeta, liveType: LiveType): number {
-    const deckBonus = deckCards.reduce((v, it) => v + (it.eventBonus === undefined ? 0 : it.eventBonus), 0)
+    const deckBonus = this.getDeckBonus(deckCards)
+    if (liveType !== LiveType.CHALLENGE && deckBonus === undefined) throw new Error('Deck bonus is undefined')
     const score = LiveCalculator.getLiveScoreByDeck(deckCards, honorBonus, musicMeta, liveType)
     return EventCalculator.getEventPoint(liveType, score, musicMeta.event_rate, deckBonus)
   }

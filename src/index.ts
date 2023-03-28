@@ -13,6 +13,7 @@ export * from './live-score/live-calculator'
 // Recommend
 export * from './deck-recommend/challenge-live-deck-recommend'
 export * from './deck-recommend/event-deck-recommend'
+export * from './music-recommend/music-recommend'
 
 // Common struct
 // export * from './common/music-meta'

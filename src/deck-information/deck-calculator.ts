@@ -4,6 +4,7 @@ import { type UserHonor } from '../user-data/user-honor'
 import { type Honor } from '../master-data/honor'
 import { CardCalculator, type CardDetail } from './card-calculator'
 import { computeWithDefault, findOrThrow, getOrThrow } from '../util/collection-util'
+import { EventCalculator } from '../event-point/event-calculator'
 
 export class DeckCalculator {
   private readonly cardCalculator: CardCalculator
@@ -56,7 +57,9 @@ export class DeckCalculator {
         lifeRecovery: cardDetail.lifeSkill
       }
     })
-    return { power, skill }
+    // 计算卡组活动加成
+    const eventBonus = EventCalculator.getDeckBonus(cardDetails)
+    return { power, eventBonus, skill }
   }
 
   /**
@@ -71,6 +74,7 @@ export class DeckCalculator {
 
 export interface DeckDetail {
   power: number
+  eventBonus?: number
   skill: SkillDetail[]
 }
 export interface SkillDetail { cardId?: number, scoreUp: number, lifeRecovery: number }
