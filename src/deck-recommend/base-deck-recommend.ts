@@ -92,19 +92,16 @@ export class BaseDeckRecommend {
   /**
    * 推荐高分卡组
    * @param userCards 参与推荐的卡牌
-   * @param musicId 歌曲ID
-   * @param musicDiff 歌曲难度
+   * @param musicMeta 歌曲信息
    * @param scoreFunc 分数计算公式
    * @param eventId 活动ID（如果要计算活动PT的话）
    * @param isChallengeLive 是否挑战Live（人员可重复）
    * @param member 限制人数（2-5、默认5）
    */
   public async recommendHighScoreDeck (
-    userCards: UserCard[], musicId: number, musicDiff: string, scoreFunc: ScoreFunction, eventId: number = 0,
+    userCards: UserCard[], musicMeta: MusicMeta, scoreFunc: ScoreFunction, eventId: number = 0,
     isChallengeLive: boolean = false, member: number = 5
   ): Promise<{ score: number, deckCards: UserCard[] }> {
-    const musicMetas = await this.dataProvider.getMusicMeta() as MusicMeta[]
-    const musicMeta = findOrThrow(musicMetas, it => it.music_id === musicId && it.difficulty === musicDiff)
     const cardDetails = BaseDeckRecommend.filterCard(await this.cardCalculator.batchGetCardDetail(userCards, eventId))
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
     // console.log(`All:${userCards.length}, used:${cardDetails.length}`)

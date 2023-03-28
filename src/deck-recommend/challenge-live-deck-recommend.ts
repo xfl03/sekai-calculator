@@ -6,6 +6,7 @@ import { BaseDeckRecommend } from './base-deck-recommend'
 import { type UserCard } from '../user-data/user-card'
 import { type Card } from '../master-data/card'
 import { LiveType } from '../live-score/live-calculator'
+import { type MusicMeta } from '../common/music-meta'
 
 export class ChallengeLiveDeckRecommend {
   private readonly baseRecommend: BaseDeckRecommend
@@ -18,18 +19,17 @@ export class ChallengeLiveDeckRecommend {
    * 推荐挑战Live用的卡牌
    * 根据Live分数高低推荐
    * @param characterId 角色ID
-   * @param musicId 歌曲ID
-   * @param musicDiff 歌曲难度
+   * @param musicMeta 歌曲信息
    * @param member 限制人数（2-5、默认5）
    */
   public async recommendChallengeLiveDeck (
-    characterId: number, musicId: number, musicDiff: string, member: number = 5
+    characterId: number, musicMeta: MusicMeta, member: number = 5
   ): Promise<{ score: number, deck: UserChallengeLiveSoloDeck }> {
     const userCards = await this.dataProvider.getUserData('userCards') as UserCard[]
     const cards = await this.dataProvider.getMasterData('cards') as Card[]
     const characterCards = userCards
       .filter(userCard => findOrThrow(cards, it => it.id === userCard.cardId).characterId === characterId)
-    const recommend = await this.baseRecommend.recommendHighScoreDeck(characterCards, musicId, musicDiff,
+    const recommend = await this.baseRecommend.recommendHighScoreDeck(characterCards, musicMeta,
       BaseDeckRecommend.getLiveScoreFunction(LiveType.SOLO), 0, true, member)
     return {
       score: recommend.score,
