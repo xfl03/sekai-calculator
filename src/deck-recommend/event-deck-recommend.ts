@@ -23,13 +23,15 @@ export class EventDeckRecommend {
    */
   public async recommendEventDeck (
     eventId: number, musicMeta: MusicMeta, liveType: LiveType, limit: number = 1
-  ): Promise<Array<{ point: number, deck: UserDeck }>> {
+  ): Promise<Array<{ point: number, power: number, eventBonus?: number, deck: UserDeck }>> {
     const userCards = await this.dataProvider.getUserData('userCards') as UserCard[]
     const recommend = await this.baseRecommend.recommendHighScoreDeck(userCards, musicMeta,
       BaseDeckRecommend.getEventPointFunction(liveType), limit, eventId)
     return recommend.map(it => {
       return {
         point: it.score,
+        power: it.power,
+        eventBonus: it.eventBonus,
         deck: DeckService.toUserDeck(it.deckCards)
       }
     })

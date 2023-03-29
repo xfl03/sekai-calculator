@@ -67,19 +67,23 @@ export class BaseDeckRecommend {
    * @param limit 需要推荐的卡组数量（按分数高到低）
    * @param isChallengeLive 是否挑战Live（人员可重复）
    * @param member 人数限制（2-5、默认5）
+   * @param honorBonus 称号加成
    * @param deckCards 计算过程中的当前卡组
    * @param deckCharacters 当前卡组的人员
    * @private
    */
   private static findBestCards (
     cardDetails: CardDetail[], scoreFunc: (deckCards: CardDetail[]) => number, limit: number = 1,
-    isChallengeLive: boolean = false, member: number = 5, deckCards: CardDetail[] = [], deckCharacters: number[] = []
+    isChallengeLive: boolean = false, member: number = 5, honorBonus: number = 0, deckCards: CardDetail[] = [], deckCharacters: number[] = []
   ): RecommendDeck[] {
     // 已经是完整卡组，计算当前卡组的值
     if (deckCards.length === member) {
       const score = scoreFunc(deckCards)
+      const deckDetail = DeckCalculator.getDeckDetailByCards(deckCards, honorBonus)
       return [{
         score,
+        power: deckDetail.power,
+        eventBonus: deckDetail.eventBonus,
         deckCards
       }]
     }
@@ -105,7 +109,7 @@ export class BaseDeckRecommend {
       // 递归，寻找所有情况
       const result = BaseDeckRecommend.findBestCards(
         cardDetails, scoreFunc, limit, isChallengeLive, member,
-        [...deckCards, card], [...deckCharacters, card.characterId])
+        honorBonus, [...deckCards, card], [...deckCharacters, card.characterId])
       // 更新答案，按分数高到低排序、限制数量（可能用个堆来维护更合适）
       ans = [...ans, ...result].sort((a, b) => b.score - a.score)
       if (ans.length > limit) ans = ans.slice(0, limit)
@@ -137,7 +141,7 @@ export class BaseDeckRecommend {
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
     // console.log(`All:${userCards.length}, used:${cardDetails.length}`)
     return BaseDeckRecommend.findBestCards(cardDetails,
-      deckCards => scoreFunc(musicMeta, honorBonus, deckCards), limit, isChallengeLive, member)
+      deckCards => scoreFunc(musicMeta, honorBonus, deckCards), limit, isChallengeLive, member, honorBonus)
   }
 
   /**
@@ -161,4 +165,9 @@ export class BaseDeckRecommend {
 
 export type ScoreFunction = (musicMeta: MusicMeta, honorBonus: number, deckCards: CardDetail[]) => number
 
-interface RecommendDeck { score: number, deckCards: CardDetail[] }
+interface RecommendDeck {
+  score: number
+  power: number
+  eventBonus?: number
+  deckCards: CardDetail[]
+}

@@ -25,7 +25,7 @@ export class ChallengeLiveDeckRecommend {
    */
   public async recommendChallengeLiveDeck (
     characterId: number, musicMeta: MusicMeta, limit: number = 1, member: number = 5
-  ): Promise<Array<{ score: number, deck: UserChallengeLiveSoloDeck }>> {
+  ): Promise<Array<{ score: number, power: number, deck: UserChallengeLiveSoloDeck }>> {
     const userCards = await this.dataProvider.getUserData('userCards') as UserCard[]
     const cards = await this.dataProvider.getMasterData('cards') as Card[]
     const characterCards = userCards
@@ -35,6 +35,7 @@ export class ChallengeLiveDeckRecommend {
     return recommend.map(it => {
       return {
         score: it.score,
+        power: it.power,
         deck: DeckService.toUserChallengeLiveSoloDeck(it.deckCards, characterId)
       }
     })
