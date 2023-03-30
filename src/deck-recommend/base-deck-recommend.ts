@@ -101,9 +101,13 @@ export class BaseDeckRecommend {
       if (deckCards.length >= 1 && card.attr !== deckCards[0].attr && !containsAny(deckCards[0].units, card.units)) {
         continue
       }
-      // 要求生成的卡组后面4个位置按卡牌ID排序
-      if (deckCards.length >= 2 && card.cardId < deckCards[deckCards.length - 1].cardId) continue
-      // 如果比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
+      // 要求生成的卡组后面4个位置按强弱排序、同强度按卡牌ID排序
+      // 除非当前卡明确比上一张卡小、不然就要ID大
+      if (deckCards.length >= 2 && !CardCalculator.isCertainlyLessThan(card, deckCards[deckCards.length - 1]) &&
+        card.cardId < deckCards[deckCards.length - 1].cardId) {
+        continue
+      }
+      // 如果肯定比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
       if (CardCalculator.isCertainlyLessThan(card, preCard)) continue
       preCard = card
       // 递归，寻找所有情况
