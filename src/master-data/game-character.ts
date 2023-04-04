@@ -2,9 +2,9 @@ export interface GameCharacter {
   id: number
   seq: number
   resourceId: number
-  firstName: string
+  firstName?: string
   givenName: string
-  firstNameRuby: string
+  firstNameRuby?: string
   givenNameRuby: string
   gender: string
   height: number

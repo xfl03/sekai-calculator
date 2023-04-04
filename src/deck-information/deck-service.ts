@@ -81,18 +81,18 @@ export class DeckService {
 
   /**
    * 给定卡牌组建新的用户挑战卡组
-   * @param userCards 卡牌（5站）
+   * @param userCards 卡牌（最少2张）
    * @param characterId 角色ID
    */
   public static toUserChallengeLiveSoloDeck (userCards: CardDetail[], characterId: number): UserChallengeLiveSoloDeck {
-    if (userCards.length !== 5) throw new Error('deck card should be 5')
+    if (userCards.length < 2) throw new Error('deck card should more than 1')
     return {
       characterId,
       leader: userCards[0].cardId,
       support1: userCards[1].cardId,
-      support2: userCards[2].cardId,
-      support3: userCards[3].cardId,
-      support4: userCards[4].cardId
+      support2: userCards.length < 3 ? null : userCards[2].cardId,
+      support3: userCards.length < 4 ? null : userCards[3].cardId,
+      support4: userCards.length < 5 ? null : userCards[4].cardId
     }
   }
 }
