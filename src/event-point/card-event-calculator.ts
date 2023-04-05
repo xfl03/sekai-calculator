@@ -1,4 +1,4 @@
-import { type DataProvider } from '../common/data-provider'
+import { type DataProvider } from '../data-provider/data-provider'
 import { type Card } from '../master-data/card'
 import { type EventDeckBonus } from '../master-data/event-deck-bonus'
 import { type GameCharacterUnit } from '../master-data/game-character-unit'

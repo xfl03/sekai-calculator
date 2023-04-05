@@ -1,5 +1,5 @@
-import { type DataProvider } from '../common/data-provider'
-import { CardCalculator, type CardDetail } from '../deck-information/card-calculator'
+import { type DataProvider } from '../data-provider/data-provider'
+import { CardCalculator, type CardConfig, type CardDetail } from '../deck-information/card-calculator'
 import { DeckCalculator } from '../deck-information/deck-calculator'
 import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
@@ -46,7 +46,7 @@ export class BaseDeckRecommend {
   private static filterCard (cardDetails: CardDetail[]): CardDetail[] {
     // 根据活动加成，排除掉一些加成较低的卡牌
     let afterFilter = cardDetails
-    for (const minBonus of [65, 50, 40, 25, 15, 0]) {
+    for (const minBonus of [55, 50, 45, 40, 30, 25, 15, 5, 0]) {
       const bonusFilter = cardDetails.filter(cardDetail =>
         !(cardDetail.eventBonus !== undefined && cardDetail.eventBonus < minBonus))
       if (this.canMakeEventDeck(bonusFilter)) {
@@ -128,18 +128,20 @@ export class BaseDeckRecommend {
   /**
    * 推荐高分卡组
    * @param userCards 参与推荐的卡牌
-   * @param musicMeta 歌曲信息
    * @param scoreFunc 分数计算公式
+   * @param musicMeta 歌曲信息
    * @param limit 需要推荐的卡组数量（按分数高到低）
+   * @param member 限制人数（2-5、默认5）
+   * @param cardConfig 卡牌设置
    * @param eventId 活动ID（如果要计算活动PT的话）
    * @param isChallengeLive 是否挑战Live（人员可重复）
-   * @param member 限制人数（2-5、默认5）
    */
   public async recommendHighScoreDeck (
-    userCards: UserCard[], musicMeta: MusicMeta, scoreFunc: ScoreFunction, limit: number = 1, eventId: number = 0,
-    isChallengeLive: boolean = false, member: number = 5
+    userCards: UserCard[], scoreFunc: ScoreFunction,
+    { musicMeta, limit = 1, member = 5, cardConfig = {} }: DeckRecommendConfig,
+    eventId: number = 0, isChallengeLive: boolean = false
   ): Promise<RecommendDeck[]> {
-    const cards = await this.cardCalculator.batchGetCardDetail(userCards, eventId)
+    const cards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventId)
     let cardDetails = (isChallengeLive || eventId === 0) ? cards : BaseDeckRecommend.filterCard(cards)
     cardDetails = cardDetails.sort((a, b) => a.cardId - b.cardId)// 按ID排序
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
@@ -174,4 +176,23 @@ interface RecommendDeck {
   power: number
   eventBonus?: number
   deckCards: CardDetail[]
+}
+
+export interface DeckRecommendConfig {
+  /**
+   * 歌曲信息
+   */
+  musicMeta: MusicMeta
+  /**
+   * 需要推荐的卡组数量（按分数高到低）
+   */
+  limit?: number
+  /**
+   * 限制人数（2-5、默认5）
+   */
+  member?: number
+  /**
+   * 卡牌设置
+   */
+  cardConfig?: CardConfig
 }

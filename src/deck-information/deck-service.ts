@@ -1,4 +1,4 @@
-import { type DataProvider } from '../common/data-provider'
+import { type DataProvider } from '../data-provider/data-provider'
 import { type UserDeck } from '../user-data/user-deck'
 import { findOrThrow } from '../util/collection-util'
 import { type UserCard } from '../user-data/user-card'

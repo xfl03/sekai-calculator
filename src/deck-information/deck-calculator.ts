@@ -1,4 +1,4 @@
-import type { DataProvider } from '../common/data-provider'
+import { type DataProvider } from '../data-provider/data-provider'
 import type { UserCard } from '../user-data/user-card'
 import { type UserHonor } from '../user-data/user-honor'
 import { type Honor } from '../master-data/honor'

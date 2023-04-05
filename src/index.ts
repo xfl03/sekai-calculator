@@ -1,3 +1,6 @@
+// Data Provider
+export * from './data-provider/data-provider'
+
 // Service
 export * from './deck-information/deck-service'
 
@@ -17,12 +20,12 @@ export * from './music-recommend/music-recommend'
 
 // Common struct
 export * from './common/music-meta'
-export * from './common/data-provider'
 
 // Master data struct
 export * from './master-data/area-item-level'
 export * from './master-data/card'
 export * from './master-data/card-episode'
+export * from './master-data/card-rarity'
 export * from './master-data/character-rank'
 export * from './master-data/event-card'
 export * from './master-data/event-deck-bonus'

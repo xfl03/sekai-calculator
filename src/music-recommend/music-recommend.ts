@@ -1,4 +1,4 @@
-import { type DataProvider } from '../common/data-provider'
+import { type DataProvider } from '../data-provider/data-provider'
 import { LiveCalculator, LiveType } from '../live-score/live-calculator'
 import { type MusicMeta } from '../common/music-meta'
 import { DeckCalculator, type DeckDetail } from '../deck-information/deck-calculator'

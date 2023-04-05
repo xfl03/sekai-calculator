@@ -1,7 +1,6 @@
 import { ChallengeLiveDeckRecommend, EventDeckRecommend, CardCalculator, DeckCalculator, DeckService, EventCalculator, LiveCalculator, LiveType } from '../src'
 import { TestDataProvider } from './data-provider.test'
-import { type UserCard } from '../src/user-data/user-card'
-import { type UserArea } from '../src/user-data/user-area'
+import { type UserCard, type UserArea } from '../src'
 
 const challengeRecommend = new ChallengeLiveDeckRecommend(TestDataProvider.INSTANCE)
 const eventRecommend = new EventDeckRecommend(TestDataProvider.INSTANCE)
@@ -42,10 +41,11 @@ test('challenge', async () => {
   const liveDetail = await liveCalculator.getLiveDetail(deck, musicMeta, LiveType.SOLO)
   const score = liveDetail.score
   console.log(`Current score:${score}`)
-  await challengeRecommend.recommendChallengeLiveDeck(24, musicMeta, 3).then(it => {
-    console.log(it)
-    expect(it[0].score).toBeGreaterThanOrEqual(score)
-  })
+  await challengeRecommend.recommendChallengeLiveDeck(24, { musicMeta, limit: 3 })
+    .then(it => {
+      console.log(it)
+      expect(it[0].score).toBeGreaterThanOrEqual(score)
+    })
 })
 test('event', async () => {
   // await maxUser()
@@ -61,12 +61,13 @@ test('event', async () => {
     member3: 196,
     member4: 152,
     member5: 219
-  }), 89)
+  }), {}, 89)
   const score = EventCalculator.getDeckEventPoint(
     cardDetails, await deckCalculator.getHonorBonusPower(), musicMeta, LiveType.MULTI)
   console.log(`Current score:${score}`)
-  await eventRecommend.recommendEventDeck(89, musicMeta, LiveType.MULTI, 3).then(it => {
-    console.log(it)
-    expect(it[0].point).toBeGreaterThanOrEqual(score)
-  })
+  await eventRecommend.recommendEventDeck(89, LiveType.MULTI, { musicMeta, limit: 3 })
+    .then(it => {
+      console.log(it)
+      expect(it[0].point).toBeGreaterThanOrEqual(score)
+    })
 })

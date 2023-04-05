@@ -1,4 +1,4 @@
-import type { DataProvider } from '../common/data-provider'
+import { type DataProvider } from '../data-provider/data-provider'
 import { CardEventCalculator } from './card-event-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type CardDetail } from '../deck-information/card-calculator'
