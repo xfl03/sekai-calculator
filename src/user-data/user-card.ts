@@ -12,7 +12,7 @@ export interface UserCard {
   defaultImage: string
   duplicateCount: number
   createdAt: number
-  episodes: Array<{
+  episodes?: Array<{
     cardEpisodeId: number
     scenarioStatus: string
     scenarioStatusReasons: string[]

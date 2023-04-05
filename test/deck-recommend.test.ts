@@ -1,4 +1,13 @@
-import { ChallengeLiveDeckRecommend, EventDeckRecommend, CardCalculator, DeckCalculator, DeckService, EventCalculator, LiveCalculator, LiveType } from '../src'
+import {
+  ChallengeLiveDeckRecommend,
+  EventDeckRecommend,
+  CardCalculator,
+  DeckCalculator,
+  DeckService,
+  EventCalculator,
+  LiveCalculator,
+  LiveType
+} from '../src'
 import { TestDataProvider } from './data-provider.test'
 import { type UserCard, type UserArea } from '../src'
 
@@ -40,10 +49,13 @@ test('challenge', async () => {
   const musicMeta = await liveCalculator.getMusicMeta(104, 'master')
   const liveDetail = await liveCalculator.getLiveDetail(deck, musicMeta, LiveType.SOLO)
   const score = liveDetail.score
-  console.log(`Current score:${score}`)
-  await challengeRecommend.recommendChallengeLiveDeck(24, { musicMeta, limit: 3 })
+  // console.log(`Current score:${score}`)
+  await challengeRecommend.recommendChallengeLiveDeck(24, {
+    musicMeta,
+    limit: 1
+  })
     .then(it => {
-      console.log(it)
+      // console.log(it)
       expect(it[0].score).toBeGreaterThanOrEqual(score)
     })
 })
@@ -64,10 +76,24 @@ test('event', async () => {
   }), {}, 89)
   const score = EventCalculator.getDeckEventPoint(
     cardDetails, await deckCalculator.getHonorBonusPower(), musicMeta, LiveType.MULTI)
-  console.log(`Current score:${score}`)
-  await eventRecommend.recommendEventDeck(89, LiveType.MULTI, { musicMeta, limit: 3 })
-    .then(it => {
-      console.log(it)
-      expect(it[0].point).toBeGreaterThanOrEqual(score)
-    })
+  // console.log(`Current score:${score}`)
+  const recommend0 = await eventRecommend.recommendEventDeck(89, LiveType.MULTI, {
+    musicMeta,
+    limit: 1
+  })
+  // console.log(recommend0)
+  expect(recommend0[0].point).toBeGreaterThanOrEqual(score)
+
+  const recommend1 = await eventRecommend.recommendEventDeck(89, LiveType.MULTI, {
+    musicMeta,
+    limit: 1,
+    cardConfig: {
+      rankMax: true,
+      masterMax: true,
+      episodeRead: true,
+      skillMax: true
+    }
+  })
+  // console.log(recommend1)
+  expect(recommend1[0].point).toBeGreaterThanOrEqual(recommend0[0].point)
 })

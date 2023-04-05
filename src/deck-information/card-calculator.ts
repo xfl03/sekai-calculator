@@ -75,7 +75,7 @@ export class CardCalculator {
     }
 
     // 处理前后篇解锁
-    if (episodeRead) {
+    if (episodeRead && ret.episodes !== undefined) {
       ret.episodes.forEach(it => { it.scenarioStatus = 'already_read' })
     }
 
