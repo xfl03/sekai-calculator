@@ -35,6 +35,8 @@ export * from './master-data/game-character'
 export * from './master-data/game-character-unit'
 export * from './master-data/honor'
 export * from './master-data/master-lesson'
+export * from './master-data/music'
+export * from './master-data/music-difficulty'
 export * from './master-data/skill'
 
 // User data struct
