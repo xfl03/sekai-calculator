@@ -1,5 +1,6 @@
 // Data Provider
 export * from './data-provider/data-provider'
+export * from './data-provider/cached-data-provider'
 
 // Service
 export * from './deck-information/deck-service'
