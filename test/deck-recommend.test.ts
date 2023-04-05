@@ -82,7 +82,7 @@ test('event', async () => {
     limit: 1
   })
   // console.log(recommend0)
-  expect(recommend0[0].point).toBeGreaterThanOrEqual(score)
+  expect(recommend0[0].score).toBeGreaterThanOrEqual(score)
 
   const recommend1 = await eventRecommend.recommendEventDeck(89, LiveType.MULTI, {
     musicMeta,
@@ -95,5 +95,5 @@ test('event', async () => {
     }
   })
   // console.log(recommend1)
-  expect(recommend1[0].point).toBeGreaterThanOrEqual(recommend0[0].point)
+  expect(recommend1[0].score).toBeGreaterThanOrEqual(recommend0[0].score)
 })

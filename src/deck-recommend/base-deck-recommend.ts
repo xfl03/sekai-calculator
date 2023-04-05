@@ -171,7 +171,7 @@ export class BaseDeckRecommend {
 
 export type ScoreFunction = (musicMeta: MusicMeta, honorBonus: number, deckCards: CardDetail[]) => number
 
-interface RecommendDeck {
+export interface RecommendDeck {
   score: number
   power: number
   eventBonus?: number
