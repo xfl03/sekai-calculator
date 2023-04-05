@@ -102,7 +102,8 @@ export class BaseDeckRecommend {
         continue
       }
       // 要求生成的卡组后面4个位置按强弱排序、同强度按卡牌ID排序
-      // 除非当前卡明确比上一张卡小、不然就要ID大
+      // 如果上一张卡肯定小，那就不符合顺序；在上一张卡不一定小的前提下，除非当前卡明确比上一张卡小、不然就要ID大
+      if (deckCards.length >= 2 && CardCalculator.isCertainlyLessThan(deckCards[deckCards.length - 1], card)) continue
       if (deckCards.length >= 2 && !CardCalculator.isCertainlyLessThan(card, deckCards[deckCards.length - 1]) &&
         card.cardId < deckCards[deckCards.length - 1].cardId) {
         continue
