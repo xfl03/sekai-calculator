@@ -96,7 +96,7 @@ export class BaseDeckRecommend {
     }
     // 非完整卡组，继续遍历所有情况
     let ans: RecommendDeck[] = []
-    let preCard = cardDetails[0]
+    let preCard: CardDetail | null = null
     for (const card of cardDetails) {
       // 跳过已经重复出现过的卡牌
       if (deckCards.includes(card)) continue
@@ -117,7 +117,7 @@ export class BaseDeckRecommend {
         continue
       }
       // 如果肯定比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
-      if (CardCalculator.isCertainlyLessThan(card, preCard)) continue
+      if (preCard !== null && CardCalculator.isCertainlyLessThan(card, preCard)) continue
       preCard = card
       // 递归，寻找所有情况
       const result = BaseDeckRecommend.findBestCards(
