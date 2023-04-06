@@ -124,6 +124,16 @@ export class BaseDeckRecommend {
         honorBonus, [...deckCards, card], [...deckCharacters, card.characterId])
       // 更新答案，按分数高到低排序、限制数量（可能用个堆来维护更合适）
       ans = [...ans, ...result].sort((a, b) => b.score - a.score)
+      // 排除重复答案
+      ans = ans.filter((it, i, arr) => {
+        // 第一个位置 没法排除
+        if (i === 0) return true
+        const pre = arr[i - 1]
+        // 如果分数或者综合不一样，说明肯定不是同一队
+        if (pre.score !== it.score || pre.power !== it.power) return true
+        // 如果C位不一样，也不认为是同一队
+        return pre.deckCards[0].cardId !== it.deckCards[0].cardId
+      })
       if (ans.length > limit) ans = ans.slice(0, limit)
     }
     // 在最外层检查一下是否成功组队
