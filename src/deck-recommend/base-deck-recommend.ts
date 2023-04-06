@@ -162,16 +162,18 @@ export class BaseDeckRecommend {
     let minBonus = (isChallengeLive || eventId === 0) ? 0 : 65
     while (minBonus > 0) {
       const cardDetails = BaseDeckRecommend.filterCard(cards, minBonus)
+      const cards0 = cardDetails.cards.sort((a, b) => a.cardId - b.cardId)
       minBonus = cardDetails.minBonus
       try {
-        return BaseDeckRecommend.findBestCards(cardDetails.cards,
+        return BaseDeckRecommend.findBestCards(cards0,
           deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
           limit, isChallengeLive, member, honorBonus)
       } catch (e) {
         console.warn(e)
       }
     }
-    return BaseDeckRecommend.findBestCards(cards,
+    const cards1 = cards.sort((a, b) => a.cardId - b.cardId)
+    return BaseDeckRecommend.findBestCards(cards1,
       deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
       limit, isChallengeLive, member, honorBonus)
   }
