@@ -37,3 +37,9 @@ export function containsAny<K> (collection: K[], contains: K[]): boolean {
   }
   return false
 }
+
+export function swap<K> (arr: K[], i: number, j: number): void {
+  const t = arr[i]
+  arr[i] = arr[j]
+  arr[j] = t
+}

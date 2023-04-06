@@ -4,7 +4,7 @@ import { DeckCalculator, type DeckCardDetail } from '../deck-information/deck-ca
 import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
-import { computeWithDefault, containsAny } from '../util/collection-util'
+import { computeWithDefault, containsAny, swap } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
 
 export class BaseDeckRecommend {
@@ -88,18 +88,27 @@ export class BaseDeckRecommend {
       const score = scoreFunc(deckCards)
       const deckDetail = DeckCalculator.getDeckDetailByCards(deckCards, honorBonus)
       const cards = deckDetail.cards
-      // 判断一下C位是否是最高加分效果
-      const isBestLeader = cards.reduce((v, it) => v && cards[0].scoreUp >= it.scoreUp, true)
-      if (isBestLeader) {
+      // 寻找加分效果最高的卡牌
+      let bestScoreUp = cards[0].scoreUp
+      let bestScoreIndex = 0
+      cards.forEach((it, i) => {
+        if (it.scoreUp > bestScoreUp) {
+          bestScoreUp = it.scoreUp
+          bestScoreIndex = i
+        }
+      })
+      // 如果现在C位已经对了
+      if (bestScoreIndex === 0) {
         return [{
           score,
           power: deckDetail.power,
           eventBonus: deckDetail.eventBonus,
           deckCards: cards
         }]
-      } else {
-        return []
       }
+      // 不然就重新算调整过C位后的分数
+      swap(deckCards, 0, bestScoreIndex)
+      return this.findBestCards(cardDetails, scoreFunc, limit, isChallengeLive, member, honorBonus, deckCards, deckCharacters)
     }
     // 非完整卡组，继续遍历所有情况
     let ans: RecommendDeck[] = []
