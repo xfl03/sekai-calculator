@@ -63,6 +63,7 @@ export class DeckCalculator {
       return {
         cardId: cardDetail.cardId,
         power: getOrThrow(cardPower, cardDetail.cardId),
+        eventBonus: cardDetail.eventBonus,
         scoreUp,
         lifeRecovery: cardDetail.lifeSkill
       }
@@ -95,6 +96,7 @@ export interface DeckDetail {
 export interface DeckCardDetail {
   cardId: number
   power: number
+  eventBonus?: number
   scoreUp: number
   lifeRecovery: number
 }
