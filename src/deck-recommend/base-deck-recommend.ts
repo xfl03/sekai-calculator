@@ -87,12 +87,19 @@ export class BaseDeckRecommend {
     if (deckCards.length === member) {
       const score = scoreFunc(deckCards)
       const deckDetail = DeckCalculator.getDeckDetailByCards(deckCards, honorBonus)
-      return [{
-        score,
-        power: deckDetail.power,
-        eventBonus: deckDetail.eventBonus,
-        deckCards: deckDetail.cards
-      }]
+      const cards = deckDetail.cards
+      // 判断一下C位是否是最高加分效果
+      const isBestLeader = cards.reduce((v, it) => v && cards[0].scoreUp >= it.scoreUp, true)
+      if (isBestLeader) {
+        return [{
+          score,
+          power: deckDetail.power,
+          eventBonus: deckDetail.eventBonus,
+          deckCards: cards
+        }]
+      } else {
+        return []
+      }
     }
     // 非完整卡组，继续遍历所有情况
     let ans: RecommendDeck[] = []
