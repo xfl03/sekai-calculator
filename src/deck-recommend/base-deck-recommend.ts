@@ -41,22 +41,29 @@ export class BaseDeckRecommend {
    * 过滤纳入计算的卡牌，排除掉活动加成不行的卡牌
    * 返回的卡牌按卡牌ID排序
    * @param cardDetails 卡牌详情
+   * @param preMinBonus 上一次过滤的时候的加成，下次加成一定小于给定的加成
    * @private
    */
-  private static filterCard (cardDetails: CardDetail[]): CardDetail[] {
+  private static filterCard (cardDetails: CardDetail[], preMinBonus: number = 65):
+  { minBonus: number, cards: CardDetail[] } {
     // 根据活动加成，排除掉一些加成较低的卡牌
-    let afterFilter = cardDetails
     for (const minBonus of [55, 50, 45, 40, 30, 25, 15, 5, 0]) {
+      if (minBonus >= preMinBonus) continue
       const bonusFilter = cardDetails.filter(cardDetail =>
         !(cardDetail.eventBonus !== undefined && cardDetail.eventBonus < minBonus))
       if (this.canMakeEventDeck(bonusFilter)) {
-        afterFilter = bonusFilter
-        break
+        return {
+          minBonus,
+          cards: bonusFilter
+        }
       }
     }
     // console.log(afterFilter.map(it => it.cardId))
     // console.log(`Origin:${cardDetails.length} After:${afterFilter.length}`)
-    return afterFilter
+    return {
+      minBonus: 0,
+      cards: cardDetails
+    }
   }
 
   /**
@@ -121,7 +128,9 @@ export class BaseDeckRecommend {
       if (ans.length > limit) ans = ans.slice(0, limit)
     }
     // 在最外层检查一下是否成功组队
-    if (deckCards.length === 0 && ans.length === 0) throw new Error(`Cannot find deck in ${cardDetails.length} cards`)
+    if (deckCards.length === 0 && ans.length === 0) {
+      throw new Error(`Cannot find deck in ${cardDetails.length} cards(${cardDetails.map(it => it.cardId).toString()})`)
+    }
 
     // 按分数从高到低排序、限制数量
     return ans
@@ -140,16 +149,32 @@ export class BaseDeckRecommend {
    */
   public async recommendHighScoreDeck (
     userCards: UserCard[], scoreFunc: ScoreFunction,
-    { musicMeta, limit = 1, member = 5, cardConfig = {} }: DeckRecommendConfig,
+    {
+      musicMeta,
+      limit = 1,
+      member = 5,
+      cardConfig = {}
+    }: DeckRecommendConfig,
     eventId: number = 0, isChallengeLive: boolean = false
   ): Promise<RecommendDeck[]> {
     const cards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventId)
-    let cardDetails = (isChallengeLive || eventId === 0) ? cards : BaseDeckRecommend.filterCard(cards)
-    cardDetails = cardDetails.sort((a, b) => a.cardId - b.cardId)// 按ID排序
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
-    // console.log(`All:${userCards.length}, used:${cardDetails.length}`)
-    return BaseDeckRecommend.findBestCards(cardDetails,
-      deckCards => scoreFunc(musicMeta, honorBonus, deckCards), limit, isChallengeLive, member, honorBonus)
+
+    let minBonus = (isChallengeLive || eventId === 0) ? 0 : 65
+    while (minBonus > 0) {
+      const cardDetails = BaseDeckRecommend.filterCard(cards, minBonus)
+      minBonus = cardDetails.minBonus
+      try {
+        return BaseDeckRecommend.findBestCards(cardDetails.cards,
+          deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
+          limit, isChallengeLive, member, honorBonus)
+      } catch (e) {
+        console.warn(e)
+      }
+    }
+    return BaseDeckRecommend.findBestCards(cards,
+      deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
+      limit, isChallengeLive, member, honorBonus)
   }
 
   /**
