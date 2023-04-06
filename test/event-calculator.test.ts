@@ -36,3 +36,20 @@ test('multi point', () => {
   expect(EventCalculator.getEventPoint(
     LiveType.MULTI, 2061111, 100, 271, 10, 8888888)).toBe(9050)
 })
+
+test('cheerful point', () => {
+  expect(EventCalculator.getEventPoint(
+    LiveType.CHEERFUL, 2358888, 113, 361, 10, 8888888)).toBe(18340)
+  expect(EventCalculator.getEventPoint(
+    LiveType.CHEERFUL, 2384444, 113, 361, 5, 8888888)).toBe(9245)
+  expect(EventCalculator.getEventPoint(
+    LiveType.CHEERFUL, 2397777, 111, 361, 15, 8888888)).toBe(27330)
+  expect(EventCalculator.getEventPoint(
+    LiveType.CHEERFUL, 2469999, 108, 361, 15, 8888888)).toBe(27000)
+  expect(EventCalculator.getEventPoint(
+    LiveType.CHEERFUL, 3113333, 111, 270, 1, 8888888, 920)).toBe(1675)
+  expect(EventCalculator.getEventPoint(
+    LiveType.CHEERFUL, 1927777, 120, 361, 1, 3699999, 920)).toBe(1718)
+  expect(EventCalculator.getEventPoint(
+    LiveType.CHEERFUL, 3213333, 108, 270, 1, 8888888)).toBe(1682)
+})

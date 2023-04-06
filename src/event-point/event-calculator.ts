@@ -39,19 +39,25 @@ export class EventCalculator {
     const musicRate0 = musicRate / 100
     const deckRate = deckBonus / 100 + 1
     const otherScore0 = otherScore === 0 ? 4 * selfScore : otherScore
+
+    // switch里面不能声明变量，放在外面
+    let baseScore = 0
+    let lifeRate = 0
     switch (type) {
       case LiveType.SOLO:
       case LiveType.AUTO:
-        return Math.floor((100 + Math.floor(selfScore / 20000)) * musicRate0 * deckRate) * boostRate
+        baseScore = 100 + Math.floor(selfScore / 20000)
+        return Math.floor(baseScore * musicRate0 * deckRate) * boostRate
       case LiveType.CHALLENGE:
-        return (100 + Math.floor(selfScore / 20000)) * 120
+        baseScore = 100 + Math.floor(selfScore / 20000)
+        return baseScore * 120
       case LiveType.MULTI:
-        return Math.floor((110 + Math.floor(selfScore / 17000) +
-          Math.floor(Math.min(otherScore0, 5200000) / 400000)) * musicRate0 * deckRate) * boostRate
+        baseScore = (110 + Math.floor(selfScore / 17000) + Math.min(13, Math.floor(otherScore0 / 340000)))
+        return Math.floor(baseScore * musicRate0 * deckRate) * boostRate
       case LiveType.CHEERFUL:
-        return Math.floor((114 + Math.floor(selfScore / 12500) +
-            Math.floor(Math.min(otherScore0, 4400000) / 400000) + Math.floor(Math.min(life, 1000) / 25)) *
-          musicRate0 * deckRate) * boostRate
+        baseScore = (110 + Math.floor(selfScore / 17000) + Math.min(13, Math.floor(otherScore0 / 340000)))
+        lifeRate = 1.15 + Math.min(Math.max(life / 5000, 0.1), 0.2)
+        return Math.floor(Math.floor(baseScore * musicRate0 * deckRate) * lifeRate) * boostRate
     }
   }
 
