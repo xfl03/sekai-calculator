@@ -1,6 +1,6 @@
 import { type DataProvider } from '../data-provider/data-provider'
 import { CardCalculator, type CardConfig, type CardDetail } from '../deck-information/card-calculator'
-import { DeckCalculator } from '../deck-information/deck-calculator'
+import { DeckCalculator, type DeckCardDetail } from '../deck-information/deck-calculator'
 import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
@@ -84,7 +84,7 @@ export class BaseDeckRecommend {
         score,
         power: deckDetail.power,
         eventBonus: deckDetail.eventBonus,
-        deckCards
+        deckCards: deckDetail.cards
       }]
     }
     // 非完整卡组，继续遍历所有情况
@@ -176,7 +176,7 @@ export interface RecommendDeck {
   score: number
   power: number
   eventBonus?: number
-  deckCards: CardDetail[]
+  deckCards: DeckCardDetail[]
 }
 
 export interface DeckRecommendConfig {

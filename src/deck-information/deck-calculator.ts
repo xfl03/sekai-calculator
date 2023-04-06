@@ -8,6 +8,7 @@ import { EventCalculator } from '../event-point/event-calculator'
 
 export class DeckCalculator {
   private readonly cardCalculator: CardCalculator
+
   public constructor (private readonly dataProvider: DataProvider) {
     this.cardCalculator = new CardCalculator(dataProvider)
   }
@@ -36,30 +37,43 @@ export class DeckCalculator {
     const map = new Map<string, number>()
     for (const cardDetail of cardDetails) {
       computeWithDefault(map, cardDetail.attr, 0, it => it + 1)
-      cardDetail.units.forEach(key => { computeWithDefault(map, key, 0, it => it + 1) })
+      cardDetail.units.forEach(key => {
+        computeWithDefault(map, key, 0, it => it + 1)
+      })
     }
+
     // 计算当前卡组的综合力，要加上称号的固定加成
-    const power = cardDetails.reduce((v, cardDetail) =>
-      v + cardDetail.units.reduce((vv, unit) =>
+    const cardPower = new Map<number, number>()
+    cardDetails.forEach(cardDetail => {
+      cardPower.set(cardDetail.cardId, cardDetail.units.reduce((vv, unit) =>
       // 有多个组合时，取最高加成组合
         Math.max(vv, cardDetail.power.get(unit, getOrThrow(map, unit), getOrThrow(map, cardDetail.attr))),
-      0),
+      0))
+    })
+    const power = cardDetails.reduce((v, cardDetail) =>
+      v + getOrThrow(cardPower, cardDetail.cardId),
     0) + honorBonus
-    // 计算当前卡组的技能效果
-    const skill = cardDetails.map(cardDetail => {
+
+    // 计算当前卡组的技能效果，并归纳卡牌在队伍中的详情信息
+    const cards = cardDetails.map(cardDetail => {
       const scoreUp = cardDetail.units.reduce((vv, unit) =>
       // 有多个组合时，取最高组合
         Math.max(vv, cardDetail.scoreSkill.get(unit, getOrThrow(map, unit), 1)),
       0)
       return {
         cardId: cardDetail.cardId,
+        power: getOrThrow(cardPower, cardDetail.cardId),
         scoreUp,
         lifeRecovery: cardDetail.lifeSkill
       }
     })
     // 计算卡组活动加成
     const eventBonus = EventCalculator.getDeckBonus(cardDetails)
-    return { power, eventBonus, skill }
+    return {
+      power,
+      eventBonus,
+      cards
+    }
   }
 
   /**
@@ -75,6 +89,12 @@ export class DeckCalculator {
 export interface DeckDetail {
   power: number
   eventBonus?: number
-  skill: SkillDetail[]
+  cards: DeckCardDetail[]
 }
-export interface SkillDetail { cardId?: number, scoreUp: number, lifeRecovery: number }
+
+export interface DeckCardDetail {
+  cardId: number
+  power: number
+  scoreUp: number
+  lifeRecovery: number
+}

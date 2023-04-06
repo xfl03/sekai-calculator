@@ -3,7 +3,7 @@ import { type UserDeck } from '../user-data/user-deck'
 import { findOrThrow } from '../util/collection-util'
 import { type UserCard } from '../user-data/user-card'
 import { type UserChallengeLiveSoloDeck } from '../user-data/user-challenge-live-solo-deck'
-import { type CardDetail } from './card-calculator'
+import { type DeckCardDetail } from './deck-calculator'
 
 export class DeckService {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -43,7 +43,7 @@ export class DeckService {
    * @param deckId 卡组ID
    * @param name 卡组名称
    */
-  public static toUserDeck (userCards: CardDetail[], userId: number = 1145141919810, deckId: number = 1, name: string = 'ユニット01'): UserDeck {
+  public static toUserDeck (userCards: DeckCardDetail[], userId: number = 1145141919810, deckId: number = 1, name: string = 'ユニット01'): UserDeck {
     if (userCards.length !== 5) throw new Error('deck card should be 5')
     return {
       userId,
@@ -84,7 +84,7 @@ export class DeckService {
    * @param userCards 卡牌（最少2张）
    * @param characterId 角色ID
    */
-  public static toUserChallengeLiveSoloDeck (userCards: CardDetail[], characterId: number): UserChallengeLiveSoloDeck {
+  public static toUserChallengeLiveSoloDeck (userCards: DeckCardDetail[], characterId: number): UserChallengeLiveSoloDeck {
     if (userCards.length < 2) throw new Error('deck card should more than 1')
     return {
       characterId,
