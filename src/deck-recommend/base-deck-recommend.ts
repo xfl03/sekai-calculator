@@ -145,7 +145,8 @@ export class BaseDeckRecommend {
     }
     // 在最外层检查一下是否成功组队
     if (deckCards.length === 0 && ans.length === 0) {
-      throw new Error(`Cannot find deck in ${cardDetails.length} cards(${cardDetails.map(it => it.cardId).toString()})`)
+      console.warn(`Cannot find deck in ${cardDetails.length} cards(${cardDetails.map(it => it.cardId).toString()})`)
+      return []
     }
 
     // 按分数从高到低排序、限制数量
@@ -181,18 +182,17 @@ export class BaseDeckRecommend {
       const cardDetails = BaseDeckRecommend.filterCard(cards, minBonus)
       const cards0 = cardDetails.cards.sort((a, b) => a.cardId - b.cardId)
       minBonus = cardDetails.minBonus
-      try {
-        return BaseDeckRecommend.findBestCards(cards0,
-          deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
-          limit, isChallengeLive, member, honorBonus)
-      } catch (e) {
-        console.warn(e)
-      }
+      const recommend = BaseDeckRecommend.findBestCards(cards0,
+        deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
+        limit, isChallengeLive, member, honorBonus)
+      if (recommend.length >= limit) return recommend
     }
     const cards1 = cards.sort((a, b) => a.cardId - b.cardId)
-    return BaseDeckRecommend.findBestCards(cards1,
+    const recommend = BaseDeckRecommend.findBestCards(cards1,
       deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
       limit, isChallengeLive, member, honorBonus)
+    if (recommend.length > 0) return recommend
+    throw new Error(`Cannot recommend any deck in ${cards.length} cards`)
   }
 
   /**

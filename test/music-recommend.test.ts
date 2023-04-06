@@ -12,6 +12,6 @@ test('challenge', async () => {
   let recommend = await musicRecommend.recommendMusic(deckDetail, [LiveType.CHALLENGE])
   recommend = recommend.sort((a, b) =>
     getOrThrow(b.liveScore, LiveType.CHALLENGE) - getOrThrow(a.liveScore, LiveType.CHALLENGE))
-  console.log(recommend.slice(0, 3))
+  // console.log(recommend.slice(0, 3))
   expect(getOrThrow(recommend[0].liveScore, LiveType.CHALLENGE)).toBeGreaterThanOrEqual(2200000)
 })
