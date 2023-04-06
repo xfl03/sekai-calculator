@@ -112,7 +112,7 @@ export class BaseDeckRecommend {
     }
     // 非完整卡组，继续遍历所有情况
     let ans: RecommendDeck[] = []
-    let preCard: CardDetail | null = null
+    // let preCard: CardDetail | null = null
     for (const card of cardDetails) {
       // 跳过已经重复出现过的卡牌
       if (deckCards.includes(card)) continue
@@ -132,13 +132,13 @@ export class BaseDeckRecommend {
         continue
       }
       // 如果肯定比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
-      if (preCard !== null && CardCalculator.isCertainlyLessThan(card, preCard)) continue
-      preCard = card
+      // if (preCard !== null && CardCalculator.isCertainlyLessThan(card, preCard)) continue
+      // preCard = card
       // 递归，寻找所有情况
       const result = BaseDeckRecommend.findBestCards(
         cardDetails, scoreFunc, limit, isChallengeLive, member,
         honorBonus, [...deckCards, card], [...deckCharacters, card.characterId])
-      // 更新答案，按分数高到低排序、限制数量（可能用个堆来维护更合适）
+      // 更新答案，按分数高到低排序可能用个堆来维护更合适）
       ans = [...ans, ...result].sort((a, b) => b.score - a.score)
       // 排除重复答案
       ans = ans.filter((it, i, arr) => {
@@ -150,6 +150,7 @@ export class BaseDeckRecommend {
         // 如果C位不一样，也不认为是同一队
         return pre.deckCards[0].cardId !== it.deckCards[0].cardId
       })
+      // 限制答案数量
       if (ans.length > limit) ans = ans.slice(0, limit)
     }
     // 在最外层检查一下是否成功组队
