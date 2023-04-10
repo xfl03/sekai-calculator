@@ -113,6 +113,7 @@ export class CardCalculator {
     const eventBonus = eventId === 0 ? undefined : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
     return {
       cardId: card.id,
+      cardRarityType: card.cardRarityType,
       characterId: card.characterId,
       units,
       attr: card.attr,
@@ -158,6 +159,7 @@ export class CardCalculator {
  */
 export interface CardDetail {
   cardId: number
+  cardRarityType: string
   characterId: number
   units: string[]
   attr: string

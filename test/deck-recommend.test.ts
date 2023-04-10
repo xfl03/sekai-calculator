@@ -82,7 +82,7 @@ test('event', async () => {
     musicMeta,
     limit: 1
   })
-  // console.log(recommend0)
+  // console.log(recommend0[0].deckCards)
   expect(recommend0[0].score).toBeGreaterThanOrEqual(score)
 
   const deck = DeckService.toUserDeck(recommend0[0].deckCards)

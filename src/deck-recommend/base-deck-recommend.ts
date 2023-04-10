@@ -4,8 +4,9 @@ import { DeckCalculator, type DeckCardDetail } from '../deck-information/deck-ca
 import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
-import { computeWithDefault, containsAny, swap } from '../util/collection-util'
+import { containsAny, swap } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
+import { filterCardPriority } from './card-priority-filter'
 
 export class BaseDeckRecommend {
   private readonly cardCalculator: CardCalculator
@@ -14,56 +15,6 @@ export class BaseDeckRecommend {
   public constructor (private readonly dataProvider: DataProvider) {
     this.cardCalculator = new CardCalculator(dataProvider)
     this.deckCalculator = new DeckCalculator(dataProvider)
-  }
-
-  /**
-   * 判断某属性或者组合角色数量至少5个
-   * @param cardDetails 卡牌
-   * @private
-   */
-  private static canMakeEventDeck (cardDetails: CardDetail[]): boolean {
-    // 统计组合或者属性的不同角色出现次数
-    const map = new Map<string, Set<number>>()
-    for (const cardDetail of cardDetails) {
-      computeWithDefault(map, cardDetail.attr, new Set(), it => it.add(cardDetail.characterId))
-      for (const unit of cardDetail.units) {
-        computeWithDefault(map, unit, new Set(), it => it.add(cardDetail.characterId))
-      }
-    }
-    // 如果有任何一个大于等于5，就没问题
-    for (const v of map.values()) {
-      if (v.size >= 5) return true
-    }
-    return false
-  }
-
-  /**
-   * 过滤纳入计算的卡牌，排除掉活动加成不行的卡牌
-   * 返回的卡牌按卡牌ID排序
-   * @param cardDetails 卡牌详情
-   * @param preMinBonus 上一次过滤的时候的加成，下次加成一定小于给定的加成
-   * @private
-   */
-  private static filterCard (cardDetails: CardDetail[], preMinBonus: number = 65):
-  { minBonus: number, cards: CardDetail[] } {
-    // 根据活动加成，排除掉一些加成较低的卡牌
-    for (const minBonus of [55, 50, 45, 40, 30, 25, 15, 5, 0]) {
-      if (minBonus >= preMinBonus) continue
-      const bonusFilter = cardDetails.filter(cardDetail =>
-        !(cardDetail.eventBonus !== undefined && cardDetail.eventBonus < minBonus))
-      if (this.canMakeEventDeck(bonusFilter)) {
-        return {
-          minBonus,
-          cards: bonusFilter
-        }
-      }
-    }
-    // console.log(afterFilter.map(it => it.cardId))
-    // console.log(`Origin:${cardDetails.length} After:${afterFilter.length}`)
-    return {
-      minBonus: 0,
-      cards: cardDetails
-    }
   }
 
   /**
@@ -187,11 +138,11 @@ export class BaseDeckRecommend {
     const cards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventId)
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
 
-    let minBonus = (isChallengeLive || eventId === 0) ? 0 : 65
-    while (minBonus > 0) {
-      const cardDetails = BaseDeckRecommend.filterCard(cards, minBonus)
-      const cards0 = cardDetails.cards.sort((a, b) => a.cardId - b.cardId)
-      minBonus = cardDetails.minBonus
+    let priority = (isChallengeLive || eventId === 0) ? 10 : 0
+    while (priority < 10) {
+      const cardDetails = filterCardPriority(cards, priority)
+      const cards0 = cardDetails.cardDetails.sort((a, b) => a.cardId - b.cardId)
+      priority = cardDetails.priority
       const recommend = BaseDeckRecommend.findBestCards(cards0,
         deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
         limit, isChallengeLive, member, honorBonus)
