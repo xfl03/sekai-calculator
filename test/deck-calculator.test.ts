@@ -11,8 +11,8 @@ test('deck', async () => {
   await deckCalculator.getDeckDetail(deck).then(it => {
     expect(it.power).toBe(263805)
     it.cards.forEach((it, i) => {
-      expect(it.scoreUp).toBe(scoreUp[i])
-      expect(it.lifeRecovery).toBe(lifeRecovery[i])
+      expect(it.skill.scoreUp).toBe(scoreUp[i])
+      expect(it.skill.lifeRecovery).toBe(lifeRecovery[i])
     })
   })
 })

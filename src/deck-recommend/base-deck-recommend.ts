@@ -42,11 +42,11 @@ export class BaseDeckRecommend {
       const deckDetail = DeckCalculator.getDeckDetailByCards(deckCards, honorBonus)
       const cards = deckDetail.cards
       // 寻找加分效果最高的卡牌
-      let bestScoreUp = cards[0].scoreUp
+      let bestScoreUp = cards[0].skill.scoreUp
       let bestScoreIndex = 0
       cards.forEach((it, i) => {
-        if (it.scoreUp > bestScoreUp) {
-          bestScoreUp = it.scoreUp
+        if (it.skill.scoreUp > bestScoreUp) {
+          bestScoreUp = it.skill.scoreUp
           bestScoreIndex = i
         }
       })

@@ -67,8 +67,10 @@ export class DeckCalculator {
         masterRank: cardDetail.masterRank,
         power: getOrThrow(cardPower, cardDetail.cardId),
         eventBonus: cardDetail.eventBonus,
-        scoreUp,
-        lifeRecovery: cardDetail.lifeSkill
+        skill: {
+          scoreUp,
+          lifeRecovery: cardDetail.lifeSkill
+        }
       }
     })
     // 计算卡组活动加成
@@ -103,6 +105,10 @@ export interface DeckCardDetail {
   masterRank: number
   power: number
   eventBonus?: number
+  skill: DeckCardSkillDetail
+}
+
+export interface DeckCardSkillDetail {
   scoreUp: number
   lifeRecovery: number
 }

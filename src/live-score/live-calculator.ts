@@ -1,5 +1,10 @@
 import { type DataProvider } from '../data-provider/data-provider'
-import { DeckCalculator, type DeckDetail, type DeckCardDetail } from '../deck-information/deck-calculator'
+import {
+  DeckCalculator,
+  type DeckDetail,
+  type DeckCardDetail,
+  type DeckCardSkillDetail
+} from '../deck-information/deck-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
 import { duplicateObj, findOrThrow } from '../util/collection-util'
@@ -70,7 +75,7 @@ export class LiveCalculator {
    */
   public static getLiveDetailByDeck (
     deckDetail: DeckDetail, musicMeta: MusicMeta, liveType: LiveType,
-    skillDetails: DeckCardDetail[] | undefined = undefined, multiPowerSum: number = 0
+    skillDetails: DeckCardSkillDetail[] | undefined = undefined, multiPowerSum: number = 0
   ): LiveDetail {
     // 确定技能发动顺序，未指定则直接按效果排序或多人重复当前技能
     const skills = skillDetails !== undefined
@@ -78,8 +83,9 @@ export class LiveCalculator {
       : (liveType === LiveType.MULTI
           ? duplicateObj(LiveCalculator.getMultiLiveSkill(deckDetail), 6)
         // 按效果排序前5个技能、第6个固定为C位
-          : [...[...deckDetail.cards].sort((a, b) => a.scoreUp - b.scoreUp),
-              deckDetail.cards[0]])
+          : [...[...deckDetail.cards].map(it => it.skill)
+              .sort((a, b) => a.scoreUp - b.scoreUp),
+            deckDetail.cards[0].skill])
     // 与技能无关的分数比例
     const baseRate = LiveCalculator.getBaseScore(musicMeta, liveType)
     // 技能分数比例，如果是最佳技能计算则按加成排序（复制一下防止影响原数组顺序）
@@ -107,15 +113,13 @@ export class LiveCalculator {
    * @param deckDetail 卡组信息
    * @private
    */
-  private static getMultiLiveSkill (deckDetail: DeckDetail): DeckCardDetail {
+  private static getMultiLiveSkill (deckDetail: DeckDetail): DeckCardSkillDetail {
     // 多人技能加分效果计算规则：C位100%发动、其他位置20%发动
     const scoreUp = deckDetail.cards.reduce((v, it, i) =>
-      v + (i === 0 ? it.scoreUp : (it.scoreUp / 5)), 0)
+      v + (i === 0 ? it.skill.scoreUp : (it.skill.scoreUp / 5)), 0)
     // 奶判只看C位
-    const lifeRecovery = deckDetail.cards[0].lifeRecovery
+    const lifeRecovery = deckDetail.cards[0].skill.lifeRecovery
     return {
-      cardId: 0,
-      power: 0,
       scoreUp,
       lifeRecovery
     }
@@ -129,15 +133,13 @@ export class LiveCalculator {
    */
   private static getSoloLiveSkill (
     liveSkills: LiveSkill[] | undefined, skillDetails: DeckCardDetail[]
-  ): DeckCardDetail[] | undefined {
+  ): DeckCardSkillDetail[] | undefined {
     if (liveSkills === undefined) return undefined
-    const skills = liveSkills.map(liveSkill => findOrThrow(skillDetails, it => it.cardId === liveSkill.cardId))
-    const ret: DeckCardDetail[] = []
+    const skills = liveSkills.map(liveSkill => findOrThrow(skillDetails, it => it.cardId === liveSkill.cardId).skill)
+    const ret: DeckCardSkillDetail[] = []
     // 因为可能会有技能空缺，先将无任何效果的技能放入6个位置
     for (let i = 0; i < 6; ++i) {
       ret.push({
-        cardId: 0,
-        power: 0,
         scoreUp: 0,
         lifeRecovery: 0
       })
