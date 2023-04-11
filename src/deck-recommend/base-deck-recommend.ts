@@ -20,6 +20,7 @@ export class BaseDeckRecommend {
 
   /**
    * 使用递归寻找最佳卡组
+   * 复杂度O(n^limit)，带大量剪枝
    * （按分数高到低排序）
    * @param cardDetails 参与计算的卡牌
    * @param scoreFunc 获得分数的公式
@@ -187,6 +188,7 @@ export interface DeckRecommendConfig {
   member?: number
   /**
    * 卡牌设置
+   * key为各个稀有度
    */
-  cardConfig?: CardConfig
+  cardConfig?: Record<string, CardConfig>
 }

@@ -62,6 +62,9 @@ export class DeckCalculator {
       0)
       return {
         cardId: cardDetail.cardId,
+        level: cardDetail.level,
+        skillLevel: cardDetail.skillLevel,
+        masterRank: cardDetail.masterRank,
         power: getOrThrow(cardPower, cardDetail.cardId),
         eventBonus: cardDetail.eventBonus,
         scoreUp,
@@ -95,6 +98,9 @@ export interface DeckDetail {
 
 export interface DeckCardDetail {
   cardId: number
+  level: number
+  skillLevel: number
+  masterRank: number
   power: number
   eventBonus?: number
   scoreUp: number

@@ -92,10 +92,36 @@ test('event', async () => {
     musicMeta,
     limit: 1,
     cardConfig: {
-      rankMax: true,
-      masterMax: true,
-      episodeRead: true,
-      skillMax: true
+      rarity_1: {
+        rankMax: true,
+        masterMax: true,
+        episodeRead: true,
+        skillMax: true
+      },
+      rarity_2: {
+        rankMax: true,
+        masterMax: true,
+        episodeRead: true,
+        skillMax: true
+      },
+      rarity_3: {
+        rankMax: true,
+        masterMax: true,
+        episodeRead: true,
+        skillMax: true
+      },
+      rarity_birthday: {
+        rankMax: true,
+        masterMax: false,
+        episodeRead: true,
+        skillMax: false
+      },
+      rarity_4: {
+        rankMax: true,
+        masterMax: false,
+        episodeRead: true,
+        skillMax: false
+      }
     }
   })
   // console.log(recommend1)

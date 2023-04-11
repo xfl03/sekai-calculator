@@ -53,7 +53,7 @@ export class CardCalculator {
       episodeRead = false,
       masterMax = false,
       skillMax = false
-    }: CardConfig
+    }: CardConfig = {}
   ): Promise<UserCard> {
     // 都按原样，那就什么都无需调整
     if (!rankMax && !episodeRead && !masterMax && !skillMax) return userCard
@@ -99,13 +99,13 @@ export class CardCalculator {
    * @param eventId 活动ID（如果非0则计算活动加成）
    */
   public async getCardDetail (
-    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: CardConfig = {}, eventId: number = 0
+    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {}, eventId: number = 0
   ): Promise<CardDetail> {
     const cards = await this.dataProvider.getMasterData('cards') as Card[]
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
     const units = await this.getCardUnits(card)
 
-    const userCard0 = await this.applyCardConfig(userCard, card, config)
+    const userCard0 = await this.applyCardConfig(userCard, card, config[card.cardRarityType])
 
     const skill = await this.skillCalculator.getCardSkill(userCard0, card)
     const power =
@@ -113,6 +113,9 @@ export class CardCalculator {
     const eventBonus = eventId === 0 ? undefined : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
     return {
       cardId: card.id,
+      level: userCard0.level,
+      skillLevel: userCard0.skillLevel,
+      masterRank: userCard0.masterRank,
       cardRarityType: card.cardRarityType,
       characterId: card.characterId,
       units,
@@ -130,7 +133,7 @@ export class CardCalculator {
    * @param config 卡牌设置
    * @param eventId 活动ID（如果非0则计算活动加成）
    */
-  public async batchGetCardDetail (userCards: UserCard[], config: CardConfig = {}, eventId: number = 0): Promise<CardDetail[]> {
+  public async batchGetCardDetail (userCards: UserCard[], config: Record<string, CardConfig> = {}, eventId: number = 0): Promise<CardDetail[]> {
     const areaItemLevels = await this.dataProvider.getMasterData('areaItemLevels') as AreaItemLevel[]
     const userAreas = await this.dataProvider.getUserData('userAreas') as UserArea[]
     const userItemLevels = userAreas.flatMap(it => it.areaItems).map(areaItem =>
@@ -159,6 +162,9 @@ export class CardCalculator {
  */
 export interface CardDetail {
   cardId: number
+  level: number
+  skillLevel: number
+  masterRank: number
   cardRarityType: string
   characterId: number
   units: string[]
