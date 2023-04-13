@@ -7,7 +7,7 @@ const cardPriorities = [
     cardRarityType: 'rarity_4',
     priority: 0
   }, {
-    eventBonus: 60,
+    eventBonus: 55,
     cardRarityType: 'rarity_birthday',
     priority: 0
   }, {
