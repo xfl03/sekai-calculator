@@ -19,6 +19,10 @@ const cardPriorities = [
     cardRarityType: 'rarity_birthday',
     priority: 1
   }, {
+    eventBonus: 55,
+    cardRarityType: 'rarity_3',
+    priority: 1
+  }, {
     eventBonus: 40,
     cardRarityType: 'rarity_4',
     priority: 2
