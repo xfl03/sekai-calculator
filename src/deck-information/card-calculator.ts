@@ -7,19 +7,21 @@ import { CardSkillCalculator } from './card-skill-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type AreaItemLevel } from '../master-data/area-item-level'
 import { type CardDetailMap } from './card-detail-map'
-import { type UserArea } from '../user-data/user-area'
 import { CardEventCalculator } from '../event-point/card-event-calculator'
 import { type CardRarity } from '../master-data/card-rarity'
+import { AreaItemService } from '../area-item-information/area-item-service'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
   private readonly skillCalculator: CardSkillCalculator
   private readonly eventCalculator: CardEventCalculator
+  private readonly areaItemService: AreaItemService
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.powerCalculator = new CardPowerCalculator(dataProvider)
     this.skillCalculator = new CardSkillCalculator(dataProvider)
     this.eventCalculator = new CardEventCalculator(dataProvider)
+    this.areaItemService = new AreaItemService(dataProvider)
   }
 
   /**
@@ -28,7 +30,7 @@ export class CardCalculator {
    * @private
    */
   private async getCardUnits (card: Card): Promise<string[]> {
-    const gameCharacters = await this.dataProvider.getMasterData('gameCharacters') as GameCharacter[]
+    const gameCharacters = await this.dataProvider.getMasterData<GameCharacter>('gameCharacters')
     // 组合（V家支援组合、角色原始组合）
     const units = [] as string[]
     if (card.supportUnit !== 'none') units.push(card.supportUnit)
@@ -58,7 +60,7 @@ export class CardCalculator {
     // 都按原样，那就什么都无需调整
     if (!rankMax && !episodeRead && !masterMax && !skillMax) return userCard
 
-    const cardRarities = await this.dataProvider.getMasterData('cardRarities') as CardRarity[]
+    const cardRarities = await this.dataProvider.getMasterData<CardRarity>('cardRarities')
     const cardRarity = findOrThrow(cardRarities, it => it.cardRarityType === card.cardRarityType)
     // 深拷贝一下原始对象，避免污染
     const ret = JSON.parse(JSON.stringify(userCard)) as UserCard
@@ -76,7 +78,9 @@ export class CardCalculator {
 
     // 处理前后篇解锁
     if (episodeRead && ret.episodes !== undefined) {
-      ret.episodes.forEach(it => { it.scenarioStatus = 'already_read' })
+      ret.episodes.forEach(it => {
+        it.scenarioStatus = 'already_read'
+      })
     }
 
     // 突破
@@ -101,7 +105,7 @@ export class CardCalculator {
   public async getCardDetail (
     userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {}, eventId: number = 0
   ): Promise<CardDetail> {
-    const cards = await this.dataProvider.getMasterData('cards') as Card[]
+    const cards = await this.dataProvider.getMasterData<Card>('cards')
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
     const units = await this.getCardUnits(card)
 
@@ -132,14 +136,17 @@ export class CardCalculator {
    * @param userCards 多张卡牌
    * @param config 卡牌设置
    * @param eventId 活动ID（如果非0则计算活动加成）
+   * @param areaItemLevels （可选）纳入计算的区域道具等级
    */
-  public async batchGetCardDetail (userCards: UserCard[], config: Record<string, CardConfig> = {}, eventId: number = 0): Promise<CardDetail[]> {
-    const areaItemLevels = await this.dataProvider.getMasterData('areaItemLevels') as AreaItemLevel[]
-    const userAreas = await this.dataProvider.getUserData('userAreas') as UserArea[]
-    const userItemLevels = userAreas.flatMap(it => it.areaItems).map(areaItem =>
-      findOrThrow(areaItemLevels, it => it.areaItemId === areaItem.areaItemId && it.level === areaItem.level))
+  public async batchGetCardDetail (
+    userCards: UserCard[], config: Record<string, CardConfig> = {}, eventId: number = 0, areaItemLevels?: AreaItemLevel[]
+  ): Promise<CardDetail[]> {
+    const areaItemLevels0 = areaItemLevels === undefined
+      ? await this.areaItemService.getAreaItemLevels()
+      : areaItemLevels
     return await Promise.all(
-      userCards.map(async it => await this.getCardDetail(it, userItemLevels, config, eventId)))
+      userCards.map(async it => await this.getCardDetail(it, areaItemLevels0, config, eventId))
+    )
   }
 
   /**

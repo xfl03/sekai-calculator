@@ -48,7 +48,7 @@ export class MusicRecommend {
   public async recommendMusic (
     deck: DeckDetail, liveTypes: LiveType[] = [LiveType.SOLO, LiveType.MULTI, LiveType.AUTO]
   ): Promise<RecommendMusic[]> {
-    const musicMetas = await this.dataProvider.getMusicMeta() as MusicMeta[]
+    const musicMetas = await this.dataProvider.getMusicMeta()
     return musicMetas.map(it => this.getRecommendMusic(deck, it, liveTypes))
   }
 }

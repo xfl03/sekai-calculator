@@ -22,13 +22,13 @@ const cardCalculator = new CardCalculator(TestDataProvider.INSTANCE)
  * 调整用户数据，拉满各项指标
  */
 export async function maxUser (): Promise<void> {
-  const userCards = await TestDataProvider.INSTANCE.getUserData('userCards') as UserCard[]
+  const userCards = await TestDataProvider.INSTANCE.getUserData<UserCard[]>('userCards')
   userCards.forEach(it => {
     it.masterRank = 5
     it.skillLevel = 4
   })
 
-  const userAreas = await TestDataProvider.INSTANCE.getUserData('userAreas') as UserArea[]
+  const userAreas = await TestDataProvider.INSTANCE.getUserData<UserArea[]>('userAreas')
   userAreas.forEach(area => {
     area.areaItems.forEach(it => {
       it.level = 15

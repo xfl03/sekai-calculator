@@ -1,6 +1,5 @@
-import { type DataProvider } from '../src'
+import { type DataProvider, type MusicMeta, CachedDataProvider } from '../src'
 import { readFileSync } from 'fs'
-import { CachedDataProvider } from '../src/data-provider/cached-data-provider'
 
 const USE_LOCAL_JSON = true
 
@@ -30,23 +29,24 @@ async function getLocalJson (path: string): Promise<any> {
  */
 export class TestDataProvider implements DataProvider {
   public static INSTANCE = new CachedDataProvider(new TestDataProvider())
-  async getMasterData (key: string): Promise<any> {
+
+  async getMasterData<T> (key: string): Promise<T[]> {
     return USE_LOCAL_JSON
       ? await getLocalJson(`sekai-master-db-diff/${key}.json`)
       : await getRemoteJson(`https://sekai-world.github.io/sekai-master-db-diff/${key}.json`)
   }
 
-  async getUserData (key: string): Promise<any> {
+  async getUserData<T> (key: string): Promise<T> {
     return mockUserData[key]
   }
 
-  async getMusicMeta (): Promise<any> {
+  async getMusicMeta (): Promise<MusicMeta[]> {
     return USE_LOCAL_JSON
       ? await getLocalJson('music_metas.json')
       : await getRemoteJson('https://storage.sekai.best/sekai-best-assets/music_metas.json')
   }
 
-  async getUserDataAll (): Promise<any> {
+  async getUserDataAll (): Promise<Record<string, any>> {
     return mockUserData
   }
 }

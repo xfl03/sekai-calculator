@@ -38,7 +38,7 @@ export class CardSkillCalculator {
    * @private
    */
   private async getSkillDetail (userCard: UserCard, card: Card): Promise<SkillDetail> {
-    const skills = await this.dataProvider.getMasterData('skills') as Skill[]
+    const skills = await this.dataProvider.getMasterData<Skill>('skills')
     const skill = findOrThrow(skills, it => it.id === card.skillId)
     const ret: SkillDetail = { scoreUp: 0, lifeRecovery: 0 }
     for (const skillEffect of skill.skillEffects) {

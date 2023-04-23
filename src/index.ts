@@ -3,6 +3,7 @@ export * from './data-provider/data-provider'
 export * from './data-provider/cached-data-provider'
 
 // Service
+export * from './area-item-information/area-item-service'
 export * from './deck-information/deck-service'
 
 // Calculator
@@ -15,6 +16,7 @@ export * from './event-point/event-calculator'
 export * from './live-score/live-calculator'
 
 // Recommend
+export * from './area-item-recommend/area-item-recommend'
 export * from './deck-recommend/base-deck-recommend'
 export * from './deck-recommend/challenge-live-deck-recommend'
 export * from './deck-recommend/event-deck-recommend'
@@ -24,6 +26,8 @@ export * from './music-recommend/music-recommend'
 export * from './common/music-meta'
 
 // Master data struct
+export * from './master-data/area'
+export * from './master-data/area-item'
 export * from './master-data/area-item-level'
 export * from './master-data/card'
 export * from './master-data/card-episode'
@@ -41,6 +45,7 @@ export * from './master-data/master-lesson'
 export * from './master-data/music'
 export * from './master-data/music-difficulty'
 export * from './master-data/music-vocal'
+export * from './master-data/shop-item'
 export * from './master-data/skill'
 
 // User data struct

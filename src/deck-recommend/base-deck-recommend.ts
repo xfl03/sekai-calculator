@@ -8,19 +8,23 @@ import { containsAny, swap } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
 import { filterCardPriority } from './card-priority-filter'
 import { updateDeck } from './deck-result-update'
+import { AreaItemService } from '../area-item-information/area-item-service'
 
 export class BaseDeckRecommend {
   private readonly cardCalculator: CardCalculator
   private readonly deckCalculator: DeckCalculator
+  private readonly areaItemService: AreaItemService
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.cardCalculator = new CardCalculator(dataProvider)
     this.deckCalculator = new DeckCalculator(dataProvider)
+    this.areaItemService = new AreaItemService(dataProvider)
   }
 
   /**
    * 使用递归寻找最佳卡组
-   * 复杂度O(n^limit)，带大量剪枝
+   * 栈深度不超过member+1层
+   * 复杂度O(n^member)，带大量剪枝
    * （按分数高到低排序）
    * @param cardDetails 参与计算的卡牌
    * @param scoreFunc 获得分数的公式
@@ -124,7 +128,8 @@ export class BaseDeckRecommend {
     }: DeckRecommendConfig,
     eventId: number = 0, isChallengeLive: boolean = false
   ): Promise<RecommendDeck[]> {
-    const cards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventId)
+    const areaItemLevels = await this.areaItemService.getAreaItemLevels()
+    const cards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventId, areaItemLevels)
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
 
     let priority = (isChallengeLive || eventId === 0) ? 10 : 0

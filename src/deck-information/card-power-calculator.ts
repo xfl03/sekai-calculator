@@ -72,8 +72,12 @@ export class CardPowerCalculator {
    * @private
    */
   private async getCardBasePowers (userCard: UserCard, card: Card): Promise<number[]> {
-    const cardEpisodes = await this.dataProvider.getMasterData('cardEpisodes') as CardEpisode[]
-    const masterLessons = await this.dataProvider.getMasterData('masterLessons') as MasterLesson[]
+    const p = await Promise.all([
+      await this.dataProvider.getMasterData<CardEpisode>('cardEpisodes'),
+      await this.dataProvider.getMasterData<MasterLesson>('masterLessons')
+    ])
+    const cardEpisodes = p[0]
+    const masterLessons = p[1]
 
     const ret = [0, 0, 0]
     // 等级
@@ -149,8 +153,8 @@ export class CardPowerCalculator {
    * @private
    */
   private async getCharacterBonusPower (basePower: number[], characterId: number): Promise<number> {
-    const characterRanks = await this.dataProvider.getMasterData('characterRanks') as CharacterRank[]
-    const userCharacters = await this.dataProvider.getUserData('userCharacters') as UserCharacter[]
+    const characterRanks = await this.dataProvider.getMasterData<CharacterRank>('characterRanks')
+    const userCharacters = await this.dataProvider.getUserData<UserCharacter[]>('userCharacters')
 
     const userCharacter = findOrThrow(userCharacters, it => it.characterId === characterId)
     const characterRank = findOrThrow(characterRanks,

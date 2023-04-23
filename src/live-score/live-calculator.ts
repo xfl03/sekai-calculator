@@ -23,7 +23,7 @@ export class LiveCalculator {
    * @param musicDiff 歌曲难度
    */
   public async getMusicMeta (musicId: number, musicDiff: string): Promise<MusicMeta> {
-    const musicMetas = await this.dataProvider.getMusicMeta() as MusicMeta[]
+    const musicMetas = await this.dataProvider.getMusicMeta()
     return findOrThrow(musicMetas, it => it.music_id === musicId && it.difficulty === musicDiff)
   }
 

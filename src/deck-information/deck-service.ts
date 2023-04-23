@@ -14,7 +14,7 @@ export class DeckService {
    * @param cardId 卡牌ID
    */
   public async getUserCard (cardId: number): Promise<UserCard> {
-    const userCards = await this.dataProvider.getUserData('userCards') as UserCard[]
+    const userCards = await this.dataProvider.getUserData<UserCard[]>('userCards')
     return findOrThrow(userCards, it => it.cardId === cardId)
   }
 
@@ -23,7 +23,7 @@ export class DeckService {
    * @param deckId 用户卡组ID
    */
   public async getDeck (deckId: number): Promise<UserDeck> {
-    const userDecks = await this.dataProvider.getUserData('userDecks') as UserDeck[]
+    const userDecks = await this.dataProvider.getUserData<UserDeck[]>('userDecks')
     return findOrThrow(userDecks, it => it.deckId === deckId)
   }
 
@@ -65,7 +65,7 @@ export class DeckService {
    */
   public async getChallengeLiveSoloDeck (characterId: number): Promise<UserChallengeLiveSoloDeck> {
     const userChallengeLiveSoloDecks =
-      await this.dataProvider.getUserData('userChallengeLiveSoloDecks') as UserChallengeLiveSoloDeck[]
+      await this.dataProvider.getUserData<UserChallengeLiveSoloDeck[]>('userChallengeLiveSoloDecks')
     return findOrThrow(userChallengeLiveSoloDecks, it => it.characterId === characterId)
   }
 

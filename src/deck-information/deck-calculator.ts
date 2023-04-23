@@ -5,6 +5,7 @@ import { type Honor } from '../master-data/honor'
 import { CardCalculator, type CardDetail } from './card-calculator'
 import { computeWithDefault, findOrThrow, getOrThrow } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
+import { type AreaItemLevel } from '../master-data/area-item-level'
 
 export class DeckCalculator {
   private readonly cardCalculator: CardCalculator
@@ -17,8 +18,8 @@ export class DeckCalculator {
    * 获取称号的综合力加成（与卡牌无关、根据称号累加）
    */
   public async getHonorBonusPower (): Promise<number> {
-    const honors = await this.dataProvider.getMasterData('honors') as Honor[]
-    const userHonors = await this.dataProvider.getUserData('userHonors') as UserHonor[]
+    const honors = await this.dataProvider.getMasterData<Honor>('honors')
+    const userHonors = await this.dataProvider.getUserData<UserHonor[]>('userHonors')
     return userHonors
       .map(userHonor => {
         const honor = findOrThrow(honors, it => it.id === userHonor.honorId)
@@ -85,10 +86,12 @@ export class DeckCalculator {
   /**
    * 根据用户卡组获得卡组详情
    * @param deckCards 用户卡组中的用户卡牌
+   * @param eventId （可选）活动ID
+   * @param areaItemLevels （可选）使用的区域道具
    */
-  public async getDeckDetail (deckCards: UserCard[]): Promise<DeckDetail> {
+  public async getDeckDetail (deckCards: UserCard[], eventId: number = 0, areaItemLevels?: AreaItemLevel[]): Promise<DeckDetail> {
     return DeckCalculator.getDeckDetailByCards(
-      await this.cardCalculator.batchGetCardDetail(deckCards), await this.getHonorBonusPower())
+      await this.cardCalculator.batchGetCardDetail(deckCards, {}, eventId, areaItemLevels), await this.getHonorBonusPower())
   }
 }
 

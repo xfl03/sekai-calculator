@@ -1,5 +1,6 @@
 import { type DataProvider } from './data-provider'
 import { getOrThrow } from '../util/collection-util'
+import { type MusicMeta } from '../common/music-meta'
 
 /**
  * 缓存数据，解决数据重复加载问题，支持并行Promise
@@ -32,23 +33,31 @@ export class CachedDataProvider implements DataProvider {
     return data
   }
 
-  public async getMasterData (key: string): Promise<any> {
+  public async getMasterData<T> (key: string): Promise<T[]> {
     return await this.getData(CachedDataProvider.globalCache, key,
       async () => await this.dataProvider.getMasterData(key))
   }
 
-  public async getMusicMeta (): Promise<any> {
+  public async getMusicMeta (): Promise<MusicMeta[]> {
     return await this.getData(CachedDataProvider.globalCache, 'musicMeta',
       async () => await this.dataProvider.getMusicMeta())
   }
 
-  public async getUserData (key: string): Promise<any> {
+  public async getUserData<T> (key: string): Promise<T> {
     const allData = await this.getUserDataAll()
     return allData[key]
   }
 
-  public async getUserDataAll (): Promise<any> {
+  public async getUserDataAll (): Promise<Record<string, any>> {
     return await this.getData(this.instanceCache, 'userData',
       async () => await this.dataProvider.getUserDataAll())
+  }
+
+  /**
+   * 并行预加载Master Data，避免后续计算时阻塞
+   * @param keys 需要加载的key
+   */
+  public async preloadMasterData (keys: string[]): Promise<any[]> {
+    return await Promise.all(keys.map(async it => await this.getMasterData(it)))
   }
 }
