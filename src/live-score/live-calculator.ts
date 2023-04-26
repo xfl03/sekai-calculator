@@ -66,6 +66,64 @@ export class LiveCalculator {
   }
 
   /**
+   * 根据情况排序技能数据
+   * @param deckDetail
+   * @param liveType
+   * @param skillDetails
+   */
+  private static getSortedSkillDetails (
+    deckDetail: DeckDetail, liveType: LiveType, skillDetails: DeckCardSkillDetail[] | undefined = undefined
+  ): { details: DeckCardSkillDetail[], sorted: boolean } {
+    // 如果已经给定合法有效的技能数据，按给定的技能数据执行
+    if (skillDetails !== undefined && skillDetails.length === 6 && skillDetails[5].scoreUp > 0) {
+      return {
+        details: skillDetails,
+        sorted: false
+      }
+    }
+    // 如果是多人联机，复制6次当前卡组的效果
+    if (liveType === LiveType.MULTI) {
+      return {
+        details: duplicateObj(LiveCalculator.getMultiLiveSkill(deckDetail), 6),
+        sorted: false
+      }
+    }
+
+    // 单人，按效果正序排序技能
+    const sortedSkill = [...deckDetail.cards].map(it => it.skill)
+      .sort((a, b) => a.scoreUp - b.scoreUp)
+    // 如果卡牌数量不足5张，中间技能需要留空
+    const emptySkill = duplicateObj({
+      scoreUp: 0,
+      lifeRecovery: 0
+    }, 5 - sortedSkill.length)
+    // 将有效技能填充到前面、中间留空、第6个固定为C位
+    return {
+      details: [...sortedSkill, ...emptySkill, deckDetail.cards[0].skill],
+      sorted: true
+    }
+  }
+
+  /**
+   * 根据情况排序技能实际效果
+   * @param sorted 技能是否排序
+   * @param cardLength 卡组卡牌数量
+   * @param skillScores 原始技能效果
+   * @private
+   */
+  private static getSortedSkillRate (sorted: boolean, cardLength: number, skillScores: number[]): number[] {
+    // 如果技能未排序，原样返回
+    if (!sorted) {
+      return skillScores
+    }
+    // 按效果正序排序前cardLength个技能、中间和后面不动
+    return [
+      ...skillScores.slice(0, cardLength).sort((a, b) => a - b),
+      ...skillScores.slice(cardLength)
+    ]
+  }
+
+  /**
    * 根据给定的卡组和歌曲数据计算Live详情
    * @param deckDetail 卡组信息
    * @param musicMeta 歌曲数据
@@ -78,25 +136,16 @@ export class LiveCalculator {
     skillDetails: DeckCardSkillDetail[] | undefined = undefined, multiPowerSum: number = 0
   ): LiveDetail {
     // 确定技能发动顺序，未指定则直接按效果排序或多人重复当前技能
-    const skills = skillDetails !== undefined
-      ? skillDetails
-      : (liveType === LiveType.MULTI
-          ? duplicateObj(LiveCalculator.getMultiLiveSkill(deckDetail), 6)
-        // 按效果排序前5个技能、第6个固定为C位
-          : [...[...deckDetail.cards].map(it => it.skill)
-              .sort((a, b) => a.scoreUp - b.scoreUp),
-            deckDetail.cards[0].skill])
+    const skills = this.getSortedSkillDetails(deckDetail, liveType, skillDetails)
     // 与技能无关的分数比例
     const baseRate = LiveCalculator.getBaseScore(musicMeta, liveType)
     // 技能分数比例，如果是最佳技能计算则按加成排序（复制一下防止影响原数组顺序）
     const skillScores = [...LiveCalculator.getSkillScore(musicMeta, liveType)]
-    const skillRate = skillDetails === undefined
-      // 按效果排序前5次技能、第6个固定（与上面的技能排序相对应）
-      ? [...skillScores.slice(0, 5).sort((a, b) => a - b), skillScores[5]]
-      : skillScores
+    const skillRate = LiveCalculator.getSortedSkillRate(skills.sorted, deckDetail.cards.length, skillScores)
     // 计算总的分数比例
-    const rate = baseRate + skills.reduce((v, it, i) => v + it.scoreUp * skillRate[i] / 100, 0)
-    const life = skills.reduce((v, it) => v + it.lifeRecovery, 0)
+    const rate = baseRate + skills.details
+      .reduce((v, it, i) => v + it.scoreUp * skillRate[i] / 100, 0)
+    const life = skills.details.reduce((v, it) => v + it.lifeRecovery, 0)
     // 活跃加分
     const powerSum = multiPowerSum === 0 ? 5 * deckDetail.power : multiPowerSum
     const activeBonus = liveType === LiveType.MULTI ? 5 * 0.015 * powerSum : 0
