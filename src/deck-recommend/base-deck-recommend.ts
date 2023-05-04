@@ -40,6 +40,10 @@ export class BaseDeckRecommend {
     cardDetails: CardDetail[], scoreFunc: (deckCards: CardDetail[]) => number, limit: number = 1,
     isChallengeLive: boolean = false, member: number = 5, honorBonus: number = 0, deckCards: CardDetail[] = [], deckCharacters: number[] = []
   ): RecommendDeck[] {
+    // 防止挑战Live卡的数量小于允许上场的数量导致无法组队
+    if (isChallengeLive) {
+      member = Math.min(member, cardDetails.length)
+    }
     // 已经是完整卡组，计算当前卡组的值
     if (deckCards.length === member) {
       const score = scoreFunc(deckCards)
