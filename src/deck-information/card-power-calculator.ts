@@ -162,7 +162,7 @@ export class CardPowerCalculator {
     }
     // 三个维度单独计算后向下取整再累加
     return basePower
-      .reduce((v, it, i) => v + Math.floor(Math.fround(it * Math.fround(areaItemBonus[i] / 100))), 0)
+      .reduce((v, it, i) => v + Math.floor(Math.fround(it * Math.fround(areaItemBonus[i] * Math.fround(0.01)))), 0)
   }
 
   /**
@@ -186,6 +186,6 @@ export class CardPowerCalculator {
       Math.fround(characterRank.power3BonusRate)
     ]
     return rates
-      .reduce((v, it, i) => v + Math.floor(Math.fround(basePower[i] * it / 100)), 0)
+      .reduce((v, it, i) => v + Math.floor(Math.fround(basePower[i] * Math.fround(it * Math.fround(0.01)))), 0)
   }
 }
