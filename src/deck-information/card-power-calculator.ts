@@ -153,15 +153,15 @@ export class CardPowerCalculator {
     for (const areaItem of usedAreaItems) {
       const allMatch = (areaItem.targetUnit !== 'any' && sameUnit) ||
         (areaItem.targetCardAttr !== 'any' && sameAttr)
-      areaItemBonus[0] = Math.fround(areaItemBonus[0] +
-        Math.fround(Math.fround(allMatch ? areaItem.power1AllMatchBonusRate : areaItem.power1BonusRate) *
-          Math.fround(0.01)) * basePower[0])
-      areaItemBonus[1] = Math.fround(areaItemBonus[1] +
-        Math.fround(Math.fround(allMatch ? areaItem.power2AllMatchBonusRate : areaItem.power2BonusRate) *
-          Math.fround(0.01)) * basePower[1])
-      areaItemBonus[2] = Math.fround(areaItemBonus[2] +
-        Math.fround(Math.fround(allMatch ? areaItem.power3AllMatchBonusRate : areaItem.power3BonusRate) *
-          Math.fround(0.01)) * basePower[2])
+      const rates = [
+        allMatch ? areaItem.power1AllMatchBonusRate : areaItem.power1BonusRate,
+        allMatch ? areaItem.power2AllMatchBonusRate : areaItem.power2BonusRate,
+        allMatch ? areaItem.power3AllMatchBonusRate : areaItem.power3BonusRate
+      ]
+      rates.forEach((rate, i) => {
+        areaItemBonus[i] = Math.fround(areaItemBonus[i] +
+          Math.fround(Math.fround(Math.fround(rate) * Math.fround(0.01)) * basePower[i]))
+      })
     }
     // 三个维度单独计算后向下取整再累加
     return areaItemBonus.reduce((v, it) => v + Math.floor(it), 0)
@@ -183,12 +183,12 @@ export class CardPowerCalculator {
       it => it.characterId === userCharacter.characterId &&
         it.characterRank === userCharacter.characterRank)
     const rates = [
-      Math.fround(characterRank.power1BonusRate),
-      Math.fround(characterRank.power2BonusRate),
-      Math.fround(characterRank.power3BonusRate)
+      characterRank.power1BonusRate,
+      characterRank.power2BonusRate,
+      characterRank.power3BonusRate
     ]
     return rates
       .reduce((v, it, i) => v +
-        Math.floor(Math.fround(Math.fround(it * Math.fround(0.01)) * basePower[i])), 0)
+        Math.floor(Math.fround(Math.fround(Math.fround(it) * Math.fround(0.01)) * basePower[i])), 0)
   }
 }
