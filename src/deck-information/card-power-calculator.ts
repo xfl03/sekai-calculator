@@ -155,13 +155,13 @@ export class CardPowerCalculator {
         (areaItem.targetCardAttr !== 'any' && sameAttr)
       areaItemBonus[0] = Math.fround(areaItemBonus[0] +
         Math.fround(Math.fround(allMatch ? areaItem.power1AllMatchBonusRate : areaItem.power1BonusRate) *
-          Math.fround(0.01) * basePower[0]))
+          Math.fround(0.01)) * basePower[0])
       areaItemBonus[1] = Math.fround(areaItemBonus[1] +
         Math.fround(Math.fround(allMatch ? areaItem.power2AllMatchBonusRate : areaItem.power2BonusRate) *
-          Math.fround(0.01) * basePower[1]))
+          Math.fround(0.01)) * basePower[1])
       areaItemBonus[2] = Math.fround(areaItemBonus[2] +
         Math.fround(Math.fround(allMatch ? areaItem.power3AllMatchBonusRate : areaItem.power3BonusRate) *
-          Math.fround(0.01) * basePower[2]))
+          Math.fround(0.01)) * basePower[2])
     }
     // 三个维度单独计算后向下取整再累加
     return areaItemBonus.reduce((v, it) => v + Math.floor(it), 0)
