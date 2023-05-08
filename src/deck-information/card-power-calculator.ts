@@ -154,15 +154,17 @@ export class CardPowerCalculator {
       const allMatch = (areaItem.targetUnit !== 'any' && sameUnit) ||
         (areaItem.targetCardAttr !== 'any' && sameAttr)
       areaItemBonus[0] = Math.fround(areaItemBonus[0] +
-        Math.fround(allMatch ? areaItem.power1AllMatchBonusRate : areaItem.power1BonusRate))
+        Math.fround(Math.fround(allMatch ? areaItem.power1AllMatchBonusRate : areaItem.power1BonusRate) *
+          Math.fround(0.01) * basePower[0]))
       areaItemBonus[1] = Math.fround(areaItemBonus[1] +
-        Math.fround(allMatch ? areaItem.power2AllMatchBonusRate : areaItem.power2BonusRate))
+        Math.fround(Math.fround(allMatch ? areaItem.power2AllMatchBonusRate : areaItem.power2BonusRate) *
+          Math.fround(0.01) * basePower[1]))
       areaItemBonus[2] = Math.fround(areaItemBonus[2] +
-        Math.fround(allMatch ? areaItem.power3AllMatchBonusRate : areaItem.power3BonusRate))
+        Math.fround(Math.fround(allMatch ? areaItem.power3AllMatchBonusRate : areaItem.power3BonusRate) *
+          Math.fround(0.01) * basePower[2]))
     }
     // 三个维度单独计算后向下取整再累加
-    return basePower
-      .reduce((v, it, i) => v + Math.floor(Math.fround(it * Math.fround(areaItemBonus[i] * Math.fround(0.01)))), 0)
+    return areaItemBonus.reduce((v, it) => v + Math.floor(it), 0)
   }
 
   /**
@@ -186,6 +188,7 @@ export class CardPowerCalculator {
       Math.fround(characterRank.power3BonusRate)
     ]
     return rates
-      .reduce((v, it, i) => v + Math.floor(Math.fround(basePower[i] * Math.fround(it * Math.fround(0.01)))), 0)
+      .reduce((v, it, i) => v +
+        Math.floor(Math.fround(Math.fround(it * Math.fround(0.01)) * basePower[i])), 0)
   }
 }
