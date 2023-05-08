@@ -1,6 +1,6 @@
 import { type DataProvider } from '../data-provider/data-provider'
 import { CardCalculator, type CardConfig, type CardDetail } from '../deck-information/card-calculator'
-import { DeckCalculator, type DeckCardDetail } from '../deck-information/deck-calculator'
+import { DeckCalculator, type DeckCardDetail, type DeckPowerDetail } from '../deck-information/deck-calculator'
 import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
@@ -80,7 +80,7 @@ export class BaseDeckRecommend {
       // 跳过重复角色
       if (!isChallengeLive && deckCharacters.includes(card.characterId)) continue
       // C位一定是技能最好的卡牌，跳过技能比C位还好的
-      if (deckCards.length >= 1 && deckCards[0].scoreSkill.isCertainlyLessThen(card.scoreSkill)) continue
+      if (deckCards.length >= 1 && deckCards[0].skill.isCertainlyLessThen(card.skill)) continue
       // 为了优化性能，必须和C位同色或同组
       if (deckCards.length >= 1 && card.attr !== deckCards[0].attr && !containsAny(deckCards[0].units, card.units)) {
         continue
@@ -177,7 +177,7 @@ export type ScoreFunction = (musicMeta: MusicMeta, honorBonus: number, deckCards
 
 export interface RecommendDeck {
   score: number
-  power: number
+  power: DeckPowerDetail
   eventBonus?: number
   deckCards: DeckCardDetail[]
 }

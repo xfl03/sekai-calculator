@@ -9,7 +9,7 @@ test('deck', async () => {
   const lifeRecovery = [0, 0, 0, 0, 250]
   const deck = await deckService.getDeckCards(await deckService.getDeck(1))
   await deckCalculator.getDeckDetail(deck).then(it => {
-    expect(it.power).toBe(263805)
+    expect(it.power.total).toBe(263805)
     it.cards.forEach((it, i) => {
       expect(it.skill.scoreUp).toBe(scoreUp[i])
       expect(it.skill.lifeRecovery).toBe(lifeRecovery[i])

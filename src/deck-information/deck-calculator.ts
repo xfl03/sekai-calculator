@@ -44,23 +44,44 @@ export class DeckCalculator {
     }
 
     // 计算当前卡组的综合力，要加上称号的固定加成
-    const cardPower = new Map<number, number>()
+    const cardPower = new Map<number, DeckCardPowerDetail>()
     cardDetails.forEach(cardDetail => {
-      cardPower.set(cardDetail.cardId, cardDetail.units.reduce((vv, unit) =>
-      // 有多个组合时，取最高加成组合
-        Math.max(vv, cardDetail.power.get(unit, getOrThrow(map, unit), getOrThrow(map, cardDetail.attr))),
-      0))
+      cardPower.set(cardDetail.cardId, cardDetail.units.reduce((vv, unit) => {
+        const current = cardDetail.power.get(unit, getOrThrow(map, unit), getOrThrow(map, cardDetail.attr))
+        // 有多个组合时，取最高加成组合
+        return current.total > vv.total ? current : vv
+      },
+      // 随便取一个当默认值
+      cardDetail.power.get(cardDetail.units[0], getOrThrow(map, cardDetail.units[0]), getOrThrow(map, cardDetail.attr))
+      ))
     })
-    const power = cardDetails.reduce((v, cardDetail) =>
-      v + getOrThrow(cardPower, cardDetail.cardId),
-    0) + honorBonus
+
+    const base = cardDetails.reduce((v, cardDetail) =>
+      v + getOrThrow(cardPower, cardDetail.cardId).base,
+    0)
+    const areaItemBonus = cardDetails.reduce((v, cardDetail) =>
+      v + getOrThrow(cardPower, cardDetail.cardId).areaItemBonus,
+    0)
+    const characterBonus = cardDetails.reduce((v, cardDetail) =>
+      v + getOrThrow(cardPower, cardDetail.cardId).characterBonus,
+    0)
+    const total = base + areaItemBonus + characterBonus + honorBonus
+    const power = {
+      base,
+      areaItemBonus,
+      characterBonus,
+      honorBonus,
+      total
+    }
 
     // 计算当前卡组的技能效果，并归纳卡牌在队伍中的详情信息
     const cards = cardDetails.map(cardDetail => {
-      const scoreUp = cardDetail.units.reduce((vv, unit) =>
+      const skill = cardDetail.units.reduce((vv, unit) => {
       // 有多个组合时，取最高组合
-        Math.max(vv, cardDetail.scoreSkill.get(unit, getOrThrow(map, unit), 1)),
-      0)
+        const current = cardDetail.skill.get(unit, getOrThrow(map, unit), 1)
+        return current.scoreUp > vv.scoreUp ? current : vv
+      },
+      cardDetail.skill.get(cardDetail.units[0], getOrThrow(map, cardDetail.units[0]), 1))
       return {
         cardId: cardDetail.cardId,
         level: cardDetail.level,
@@ -68,10 +89,7 @@ export class DeckCalculator {
         masterRank: cardDetail.masterRank,
         power: getOrThrow(cardPower, cardDetail.cardId),
         eventBonus: cardDetail.eventBonus,
-        skill: {
-          scoreUp,
-          lifeRecovery: cardDetail.lifeSkill
-        }
+        skill
       }
     })
     // 计算卡组活动加成
@@ -96,7 +114,7 @@ export class DeckCalculator {
 }
 
 export interface DeckDetail {
-  power: number
+  power: DeckPowerDetail
   eventBonus?: number
   cards: DeckCardDetail[]
 }
@@ -106,9 +124,24 @@ export interface DeckCardDetail {
   level: number
   skillLevel: number
   masterRank: number
-  power: number
+  power: DeckCardPowerDetail
   eventBonus?: number
   skill: DeckCardSkillDetail
+}
+
+export interface DeckPowerDetail {
+  base: number
+  areaItemBonus: number
+  characterBonus: number
+  honorBonus: number
+  total: number
+}
+
+export interface DeckCardPowerDetail {
+  base: number
+  areaItemBonus: number
+  characterBonus: number
+  total: number
 }
 
 export interface DeckCardSkillDetail {

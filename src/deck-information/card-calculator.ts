@@ -10,6 +10,7 @@ import { type CardDetailMap } from './card-detail-map'
 import { CardEventCalculator } from '../event-point/card-event-calculator'
 import { type CardRarity } from '../master-data/card-rarity'
 import { AreaItemService } from '../area-item-information/area-item-service'
+import { type DeckCardPowerDetail, type DeckCardSkillDetail } from './deck-calculator'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
@@ -125,8 +126,7 @@ export class CardCalculator {
       units,
       attr: card.attr,
       power,
-      scoreSkill: skill.scoreUp,
-      lifeSkill: skill.lifeRecovery,
+      skill,
       eventBonus
     }
   }
@@ -158,7 +158,7 @@ export class CardCalculator {
     cardDetail0: CardDetail, cardDetail1: CardDetail
   ): boolean {
     return cardDetail0.power.isCertainlyLessThen(cardDetail1.power) &&
-      cardDetail0.scoreSkill.isCertainlyLessThen(cardDetail1.scoreSkill) &&
+      cardDetail0.skill.isCertainlyLessThen(cardDetail1.skill) &&
       (cardDetail0.eventBonus === undefined || cardDetail1.eventBonus === undefined ||
         cardDetail0.eventBonus <= cardDetail1.eventBonus)
   }
@@ -176,9 +176,8 @@ export interface CardDetail {
   characterId: number
   units: string[]
   attr: string
-  power: CardDetailMap
-  scoreSkill: CardDetailMap
-  lifeSkill: number
+  power: CardDetailMap<DeckCardPowerDetail>
+  skill: CardDetailMap<DeckCardSkillDetail>
   eventBonus?: number
 }
 

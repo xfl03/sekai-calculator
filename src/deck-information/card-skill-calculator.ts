@@ -4,6 +4,7 @@ import { type Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
 import { type Skill } from '../master-data/skill'
 import { CardDetailMap } from './card-detail-map'
+import { type DeckCardSkillDetail } from './deck-calculator'
 
 export class CardSkillCalculator {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -15,20 +16,26 @@ export class CardSkillCalculator {
    * @param card 卡牌
    */
   public async getCardSkill (userCard: UserCard, card: Card):
-  Promise<{ scoreUp: CardDetailMap, lifeRecovery: number }> {
-    const scoreUpMap = new CardDetailMap()
+  Promise<CardDetailMap<DeckCardSkillDetail>> {
+    const skillMap = new CardDetailMap<DeckCardSkillDetail>()
     const detail = await this.getSkillDetail(userCard, card)
     if (detail.scoreUpEnhance !== undefined) {
       // 组合相关，处理不同人数的情况
       for (let i = 1; i <= 5; ++i) {
         // 如果全部同队还有一次额外加成
         const scoreUp = detail.scoreUp + (i === 5 ? 5 : (i - 1)) * detail.scoreUpEnhance.value
-        scoreUpMap.set(detail.scoreUpEnhance.unit, i, 1, scoreUp)
+        skillMap.set(detail.scoreUpEnhance.unit, i, 1, scoreUp, {
+          scoreUp,
+          lifeRecovery: detail.lifeRecovery
+        })
       }
     }
     // 固定加成，即便是组分也有个保底加成
-    scoreUpMap.set('any', 1, 1, detail.scoreUp)
-    return { scoreUp: scoreUpMap, lifeRecovery: detail.lifeRecovery }
+    skillMap.set('any', 1, 1, detail.scoreUp, {
+      scoreUp: detail.scoreUp,
+      lifeRecovery: detail.lifeRecovery
+    })
+    return skillMap
   }
 
   /**

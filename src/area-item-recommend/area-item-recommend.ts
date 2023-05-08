@@ -76,7 +76,7 @@ export class AreaItemRecommend {
       ]
       const { power: newPower } =
         await this.deckCalculator.getDeckDetail(userCards, 0, newAreaItemLevels)
-      return await this.getRecommendAreaItem(areaItem, newAreaItemLevel, newPower - currentPower)
+      return await this.getRecommendAreaItem(areaItem, newAreaItemLevel, newPower.total - currentPower.total)
     }))
     return recommend.filter(it => it.power > 0)
       .sort((a, b) => b.power / b.cost.coin - a.power / a.cost.coin)

@@ -147,10 +147,10 @@ export class LiveCalculator {
       .reduce((v, it, i) => v + it.scoreUp * skillRate[i] / 100, 0)
     const life = skills.details.reduce((v, it) => v + it.lifeRecovery, 0)
     // 活跃加分
-    const powerSum = multiPowerSum === 0 ? 5 * deckDetail.power : multiPowerSum
+    const powerSum = multiPowerSum === 0 ? 5 * deckDetail.power.total : multiPowerSum
     const activeBonus = liveType === LiveType.MULTI ? 5 * 0.015 * powerSum : 0
     return {
-      score: Math.floor(rate * deckDetail.power * 4 + activeBonus),
+      score: Math.floor(rate * deckDetail.power.total * 4 + activeBonus),
       time: musicMeta.music_time,
       life: Math.min(2000, life + 1000),
       tap: musicMeta.tap_count

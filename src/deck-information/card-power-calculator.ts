@@ -8,6 +8,7 @@ import { type AreaItemLevel } from '../master-data/area-item-level'
 import { type CharacterRank } from '../master-data/character-rank'
 import { type UserCharacter } from '../user-data/user-character'
 import { CardDetailMap } from './card-detail-map'
+import { type DeckCardPowerDetail } from './deck-calculator'
 
 export class CardPowerCalculator {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -22,25 +23,29 @@ export class CardPowerCalculator {
    */
   public async getCardPower (
     userCard: UserCard, card: Card, cardUnits: string[], userAreaItemLevels: AreaItemLevel[]
-  ): Promise<CardDetailMap> {
-    const ret = new CardDetailMap()
+  ): Promise<CardDetailMap<DeckCardPowerDetail>> {
+    const ret = new CardDetailMap<DeckCardPowerDetail>()
     // 处理区域道具以外的综合力，这些与队友无关
     const basePower = await this.getCardBasePowers(userCard, card)
     const characterBonus = await this.getCharacterBonusPower(basePower, card.characterId)
     // 处理区域道具，每个组合和属性需要计算4种情况
     for (const unit of cardUnits) {
       // 同组合、同属性
-      ret.set(unit, 5, 5, await this.getPower(
-        card, basePower, characterBonus, userAreaItemLevels, unit, true, true))
+      let power = await this.getPower(
+        card, basePower, characterBonus, userAreaItemLevels, unit, true, true)
+      ret.set(unit, 5, 5, power.total, power)
       // 同组合、混属性
-      ret.set(unit, 5, 1, await this.getPower(
-        card, basePower, characterBonus, userAreaItemLevels, unit, true, false))
+      power = await this.getPower(
+        card, basePower, characterBonus, userAreaItemLevels, unit, true, false)
+      ret.set(unit, 5, 1, power.total, power)
       // 混组合、同属性
-      ret.set(unit, 1, 5, await this.getPower(
-        card, basePower, characterBonus, userAreaItemLevels, unit, false, true))
+      power = await this.getPower(
+        card, basePower, characterBonus, userAreaItemLevels, unit, false, true)
+      ret.set(unit, 1, 5, power.total, power)
       // 混组合、混属性
-      ret.set(unit, 1, 1, await this.getPower(
-        card, basePower, characterBonus, userAreaItemLevels, unit, false, false))
+      power = await this.getPower(
+        card, basePower, characterBonus, userAreaItemLevels, unit, false, false)
+      ret.set(unit, 1, 1, power.total, power)
     }
     return ret
   }
@@ -60,9 +65,16 @@ export class CardPowerCalculator {
   private async getPower (
     card: Card, basePower: number[], characterBonus: number,
     userAreaItemLevels: AreaItemLevel[], unit: string, sameUnit: boolean, sameAttr: boolean
-  ): Promise<number> {
-    return basePower.reduce((v, it) => v + it, 0) + characterBonus + await this.getAreaItemBonusPower(
+  ): Promise<DeckCardPowerDetail> {
+    const base = basePower.reduce((v, it) => v + it, 0)
+    const areaItemBonus = await this.getAreaItemBonusPower(
       userAreaItemLevels, basePower, card.characterId, unit, sameUnit, card.attr, sameAttr)
+    return {
+      base,
+      areaItemBonus,
+      characterBonus,
+      total: base + characterBonus + areaItemBonus
+    }
   }
 
   /**

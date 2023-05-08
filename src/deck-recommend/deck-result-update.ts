@@ -9,7 +9,7 @@ function compareDeck (deck1: RecommendDeck, deck2: RecommendDeck): number {
   // 先按分数倒序
   if (deck1.score !== deck2.score) return deck2.score - deck1.score
   // 分数一样，按综合倒序
-  if (deck1.power !== deck2.power) return deck2.power - deck1.power
+  if (deck1.power !== deck2.power) return deck2.power.total - deck1.power.total
   // 分数、综合一样，按C位CardID正序
   return deck1.deckCards[0].cardId - deck2.deckCards[0].cardId
 }
