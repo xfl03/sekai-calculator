@@ -26,7 +26,7 @@ function removeSameDeck (it: RecommendDeck, i: number, arr: RecommendDeck[]): bo
   if (i === 0) return true
   const pre = arr[i - 1]
   // 如果分数或者综合不一样，说明肯定不是同一队
-  if (pre.score !== it.score || pre.power !== it.power) return true
+  if (pre.score !== it.score || pre.power.total !== it.power.total) return true
   // 如果C位不一样，也不认为是同一队
   return pre.deckCards[0].cardId !== it.deckCards[0].cardId
 }

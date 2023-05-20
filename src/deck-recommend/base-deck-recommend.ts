@@ -58,7 +58,7 @@ export class BaseDeckRecommend {
           bestScoreIndex = i
         }
       })
-      // 如果现在C位已经对了
+      // 如果现在C位已经对了（加分技能最高的卡牌在C位）
       if (bestScoreIndex === 0) {
         return [{
           score,
