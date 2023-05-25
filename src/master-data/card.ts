@@ -1,4 +1,5 @@
 import type { CommonResource } from '../common/resource'
+
 export interface Card {
   id: number
   seq: number
@@ -23,7 +24,11 @@ export interface Card {
     cardParameterType: string
     power: number
   }>
-  specialTrainingCosts: CommonResource[]
+  specialTrainingCosts: Array<{
+    cardId: number
+    seq: number
+    cost: CommonResource
+  }>
   masterLessonAchieveResources: {
     releaseConditionId: number
     cardId: number
