@@ -4,18 +4,18 @@ import { CardEventCalculator, DeckService, EventCalculator, LiveType } from '../
 const eventCalculator = new EventCalculator(TestDataProvider.INSTANCE)
 const cardEventCalculator = new CardEventCalculator(TestDataProvider.INSTANCE)
 const deckService = new DeckService(TestDataProvider.INSTANCE)
-// 选一张卡算加成，15+15
+// 选一张卡算加成，15+25
 test('card', async () => {
   await cardEventCalculator.getCardEventBonus(await deckService.getUserCard(510), 88).then(it => {
-    expect(it).toBe(30)
+    expect(it).toBe(40)
   })
 })
 
-// 选一个卡组算加成，按mock的数据应该是275%加成
+// 选一个卡组算加成，按mock的数据应该是287.5%加成
 test('deck', async () => {
   const deck = await deckService.getDeckCards(await deckService.getDeck(1))
   await eventCalculator.getDeckEventBonus(deck, 88).then(it => {
-    expect(it).toBe(275)
+    expect(it).toBe(230)
   })
 })
 

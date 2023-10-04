@@ -3,85 +3,109 @@ import { computeWithDefault } from '../util/collection-util'
 
 const cardPriorities = [
   {
-    eventBonus: 60,
+    eventBonus: 25 + 25 + 20 + 25, // 同色同队 当期卡 5破四星
     cardRarityType: 'rarity_4',
     priority: 0
   }, {
-    eventBonus: 55,
-    cardRarityType: 'rarity_birthday',
-    priority: 0
-  }, {
-    eventBonus: 50,
+    eventBonus: 25 + 25 + 20 + 10, // 同色同队 当期卡 0破四星
     cardRarityType: 'rarity_4',
-    priority: 1
-  }, {
-    eventBonus: 50,
-    cardRarityType: 'rarity_birthday',
-    priority: 1
-  }, {
-    eventBonus: 55,
-    cardRarityType: 'rarity_3',
-    priority: 1
-  }, {
-    eventBonus: 40,
-    cardRarityType: 'rarity_4',
-    priority: 2
-  }, {
-    eventBonus: 50,
-    cardRarityType: 'rarity_3',
-    priority: 2
-  }, {
-    eventBonus: 35,
-    cardRarityType: 'rarity_birthday',
-    priority: 3
-  }, {
-    eventBonus: 50,
-    cardRarityType: 'rarity_2',
-    priority: 3
-  }, {
-    eventBonus: 25,
-    cardRarityType: 'rarity_4',
-    priority: 4
-  }, {
-    eventBonus: 50,
-    cardRarityType: 'rarity_1',
-    priority: 4
-  }, {
-    eventBonus: 25,
-    cardRarityType: 'rarity_birthday',
-    priority: 5
-  }, {
-    eventBonus: 25,
-    cardRarityType: 'rarity_3',
-    priority: 5
-  }, {
-    eventBonus: 25,
-    cardRarityType: 'rarity_2',
-    priority: 6
-  }, {
-    eventBonus: 25,
-    cardRarityType: 'rarity_1',
-    priority: 6
-  }, {
-    eventBonus: 0,
-    cardRarityType: 'rarity_4',
-    priority: 7
-  }, {
-    eventBonus: 0,
-    cardRarityType: 'rarity_birthday',
-    priority: 7
-  }, {
-    eventBonus: 0,
-    cardRarityType: 'rarity_3',
-    priority: 8
-  }, {
-    eventBonus: 0,
-    cardRarityType: 'rarity_2',
-    priority: 9
-  }, {
-    eventBonus: 0,
-    cardRarityType: 'rarity_1',
     priority: 10
+  }, {
+    eventBonus: 25 + 25 + 25, // 同色同队 5破四星
+    cardRarityType: 'rarity_4',
+    priority: 20
+  }, {
+    eventBonus: 25 + 15 + 25, // 同色同队（V家） 5破四星
+    cardRarityType: 'rarity_4',
+    priority: 30
+  }, {
+    eventBonus: 25 + 25 + 10, // 同色同队 0破四星
+    cardRarityType: 'rarity_4',
+    priority: 40
+  }, {
+    eventBonus: 25 + 25 + 15,
+    cardRarityType: 'rarity_birthday',
+    priority: 40
+  }, {
+    eventBonus: 25 + 15 + 10, // 同色同队（V家） 0破四星、同色或同队 5破四星
+    cardRarityType: 'rarity_4',
+    priority: 50
+  }, {
+    eventBonus: 25 + 25 + 5,
+    cardRarityType: 'rarity_birthday',
+    priority: 50
+  }, {
+    eventBonus: 25 + 25 + 5,
+    cardRarityType: 'rarity_3',
+    priority: 50
+  }, {
+    eventBonus: 25 + 10, // 同色或同队 0破四星
+    cardRarityType: 'rarity_4',
+    priority: 60
+  }, {
+    eventBonus: 25 + 15,
+    cardRarityType: 'rarity_birthday',
+    priority: 60
+  }, {
+    eventBonus: 25 + 25,
+    cardRarityType: 'rarity_3',
+    priority: 60
+  }, {
+    eventBonus: 25,
+    cardRarityType: 'rarity_4',
+    priority: 70
+  }, {
+    eventBonus: 25 + 5,
+    cardRarityType: 'rarity_birthday',
+    priority: 70
+  }, {
+    eventBonus: 25 + 5,
+    cardRarityType: 'rarity_3',
+    priority: 70
+  }, {
+    eventBonus: 50,
+    cardRarityType: 'rarity_2',
+    priority: 70
+  }, {
+    eventBonus: 50,
+    cardRarityType: 'rarity_1',
+    priority: 70
+  }, {
+    eventBonus: 25,
+    cardRarityType: 'rarity_birthday',
+    priority: 80
+  }, {
+    eventBonus: 25,
+    cardRarityType: 'rarity_3',
+    priority: 80
+  }, {
+    eventBonus: 25,
+    cardRarityType: 'rarity_2',
+    priority: 80
+  }, {
+    eventBonus: 25,
+    cardRarityType: 'rarity_1',
+    priority: 80
+  }, {
+    eventBonus: 0,
+    cardRarityType: 'rarity_4',
+    priority: 90
+  }, {
+    eventBonus: 0,
+    cardRarityType: 'rarity_birthday',
+    priority: 90
+  }, {
+    eventBonus: 0,
+    cardRarityType: 'rarity_3',
+    priority: 90
+  }, {
+    eventBonus: 0,
+    cardRarityType: 'rarity_2',
+    priority: 90
+  }, {
+    eventBonus: 0,
+    cardRarityType: 'rarity_1',
+    priority: 90
   }
 ]
 
@@ -111,7 +135,7 @@ function canMakeDeck (cardDetails: CardDetail[]): boolean {
  * @param prePriority 上一次的优先级，保证返回优先级大于它
  */
 export function filterCardPriority (
-  cardDetails: CardDetail[], prePriority: number = 0
+  cardDetails: CardDetail[], prePriority: number = -114514
 ): { cardDetails: CardDetail[], priority: number } {
   let cards: CardDetail[] = []
   let latestPriority = 0
