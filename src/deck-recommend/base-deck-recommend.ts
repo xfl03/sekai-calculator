@@ -140,7 +140,7 @@ export class BaseDeckRecommend {
 
     // 为了优化性能，会根据活动加成优先级筛选卡牌
     const maxPriority = getMaxPriority()
-    let priority = (isChallengeLive || eventId === 0) ? maxPriority : 0 // 挑战Live不存在活动加成，所以无法按活动加成优先级筛选
+    let priority = (isChallengeLive || eventId === 0) ? maxPriority : -1 // 挑战Live不存在活动加成，所以无法按活动加成优先级筛选
     while (priority <= maxPriority) {
       const cardDetails = filterCardPriority(cards, priority)
       const cards0 = cardDetails.cardDetails.sort((a, b) => a.cardId - b.cardId)

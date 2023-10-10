@@ -2,7 +2,7 @@ import { type CardDetail } from '../deck-information/card-calculator'
 import { computeWithDefault } from '../util/collection-util'
 
 /**
- * 卡牌稀有度，一定要按priority从小到大排序
+ * 卡牌稀有度，一定要按priority从小到大排序，priority从0开始即可
  */
 const cardPriorities = [
   {
@@ -141,26 +141,26 @@ export function filterCardPriority (
   cardDetails: CardDetail[], prePriority: number = -114514
 ): { cardDetails: CardDetail[], priority: number } {
   let cards: CardDetail[] = []
-  let latestPriority = 0
   for (const cardPriority of cardPriorities) {
     // 检查是否已经是符合优先级条件的完整卡组
-    if (cardPriority.priority > latestPriority && latestPriority > prePriority && canMakeDeck(cards)) {
+    if (cardPriority.priority > prePriority && canMakeDeck(cards)) {
       return {
         cardDetails: cards,
-        priority: cardPriority.priority - 1
+        priority: cardPriority.priority
       }
     }
     // 追加符合优先级限制的卡牌
+    // 要保证不添加额外的重复卡牌
     const filtered = cardDetails
-      .filter(it => it.cardRarityType === cardPriority.cardRarityType &&
-        (it.eventBonus === undefined || it.eventBonus >= cardPriority.eventBonus))
+      .filter(it => cards.find(a => a.cardId === it.cardId) === undefined &&
+        it.cardRarityType === cardPriority.cardRarityType &&
+        (it.eventBonus !== undefined && it.eventBonus >= cardPriority.eventBonus))
     cards = [...cards, ...filtered]
-    latestPriority = cardPriority.priority
   }
   // 所有优先级已经结束，直接返回全部卡牌
   return {
     cardDetails,
-    priority: latestPriority
+    priority: getMaxPriority()
   }
 }
 
