@@ -177,14 +177,17 @@ export function filterCardPriority (
   cardDetails: CardDetail[], prePriority: number = -114514
 ): { cardDetails: CardDetail[], priority: number } {
   let cards: CardDetail[] = []
+  let latestPriority = -1
   for (const cardPriority of cardPriorities) {
     // 检查是否已经是符合优先级条件的完整卡组
-    if (cardPriority.priority > prePriority && canMakeDeck(cards)) {
+    // 因为同一个优先级可能有不止一个情况，所以要等遍历到下个优先级后才能决定是否返回
+    if (cardPriority.priority > latestPriority && latestPriority > prePriority && canMakeDeck(cards)) {
       return {
         cardDetails: cards,
-        priority: cardPriority.priority
+        priority: latestPriority
       }
     }
+    latestPriority = cardPriority.priority
     // 追加符合优先级限制的卡牌
     // 要保证不添加额外的重复卡牌
     const filtered = cardDetails
