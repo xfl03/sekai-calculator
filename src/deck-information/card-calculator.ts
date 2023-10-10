@@ -105,13 +105,16 @@ export class CardCalculator {
    */
   public async getCardDetail (
     userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {}, eventId: number = 0
-  ): Promise<CardDetail> {
+  ): Promise<CardDetail | undefined> {
     const cards = await this.dataProvider.getMasterData<Card>('cards')
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
+
+    const config0 = config[card.cardRarityType]
+    if (config0 !== undefined && config0.disable === true) return undefined // 忽略被禁用的稀有度卡牌
+
+    const userCard0 = await this.applyCardConfig(userCard, card, config0)
+
     const units = await this.getCardUnits(card)
-
-    const userCard0 = await this.applyCardConfig(userCard, card, config[card.cardRarityType])
-
     const skill = await this.skillCalculator.getCardSkill(userCard0, card)
     const power =
       await this.powerCalculator.getCardPower(userCard0, card, units, userAreaItemLevels)
@@ -146,7 +149,7 @@ export class CardCalculator {
       : areaItemLevels
     return await Promise.all(
       userCards.map(async it => await this.getCardDetail(it, areaItemLevels0, config, eventId))
-    )
+    ).then(it => it.filter(it => it !== undefined)) as CardDetail[]
   }
 
   /**
@@ -182,6 +185,10 @@ export interface CardDetail {
 }
 
 export interface CardConfig {
+  /**
+   * 禁用此稀有度卡牌
+   */
+  disable?: boolean
   /**
    * 直接按满级计算
    * 不然按卡牌等级计算
