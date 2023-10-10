@@ -6,7 +6,7 @@ import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
 import { containsAny, swap } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
-import { filterCardPriority } from './card-priority-filter'
+import { filterCardPriority, getMaxPriority } from './card-priority-filter'
 import { updateDeck } from './deck-result-update'
 import { AreaItemService } from '../area-item-information/area-item-service'
 
@@ -119,6 +119,7 @@ export class BaseDeckRecommend {
    * @param limit 需要推荐的卡组数量（按分数高到低）
    * @param member 限制人数（2-5、默认5）
    * @param cardConfig 卡牌设置
+   * @param debugLog 测试日志处理函数
    * @param eventId 活动ID（如果要计算活动PT的话）
    * @param isChallengeLive 是否挑战Live（人员可重复）
    */
@@ -128,7 +129,8 @@ export class BaseDeckRecommend {
       musicMeta,
       limit = 1,
       member = 5,
-      cardConfig = {}
+      cardConfig = {},
+      debugLog = (_: string) => {}
     }: DeckRecommendConfig,
     eventId: number = 0, isChallengeLive: boolean = false
   ): Promise<RecommendDeck[]> {
@@ -136,21 +138,20 @@ export class BaseDeckRecommend {
     const cards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventId, areaItemLevels)
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
 
-    let priority = (isChallengeLive || eventId === 0) ? 10 : 0
-    while (priority < 10) {
+    // 为了优化性能，会根据活动加成优先级筛选卡牌
+    const maxPriority = getMaxPriority()
+    let priority = (isChallengeLive || eventId === 0) ? maxPriority : 0 // 挑战Live不存在活动加成，所以无法按活动加成优先级筛选
+    while (priority <= maxPriority) {
       const cardDetails = filterCardPriority(cards, priority)
       const cards0 = cardDetails.cardDetails.sort((a, b) => a.cardId - b.cardId)
       priority = cardDetails.priority
+      debugLog(`Recommend deck with ${cards.length} cards and priority is ${priority}`)
       const recommend = BaseDeckRecommend.findBestCards(cards0,
         deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
         limit, isChallengeLive, member, honorBonus)
       if (recommend.length >= limit) return recommend
+      if (priority === maxPriority) break // 如果所有卡牌都上阵了还是租不出队伍，就报错
     }
-    const cards1 = cards.sort((a, b) => a.cardId - b.cardId)
-    const recommend = BaseDeckRecommend.findBestCards(cards1,
-      deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
-      limit, isChallengeLive, member, honorBonus)
-    if (recommend.length > 0) return recommend
     throw new Error(`Cannot recommend any deck in ${cards.length} cards`)
   }
 
@@ -200,4 +201,9 @@ export interface DeckRecommendConfig {
    * key为各个稀有度
    */
   cardConfig?: Record<string, CardConfig>
+  /**
+   * 处理测试日志的函数
+   * @param str 日志内容
+   */
+  debugLog?: (str: string) => void
 }

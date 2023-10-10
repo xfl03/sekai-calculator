@@ -25,3 +25,10 @@ Basically, `UserArea`, `UserCard`, `UserCharacter` and `UserHonor` are required 
 ```typescript
 // W.I.P.
 ```
+
+## Development
+
+### Release
+```shell
+pnpm release
+```

@@ -1,6 +1,9 @@
 import { type CardDetail } from '../deck-information/card-calculator'
 import { computeWithDefault } from '../util/collection-util'
 
+/**
+ * 卡牌稀有度，一定要按priority从小到大排序
+ */
 const cardPriorities = [
   {
     eventBonus: 25 + 25 + 20 + 25, // 同色同队 当期卡 5破四星
@@ -154,9 +157,16 @@ export function filterCardPriority (
     cards = [...cards, ...filtered]
     latestPriority = cardPriority.priority
   }
-  // 所有优先级已经结束
+  // 所有优先级已经结束，直接返回全部卡牌
   return {
-    cardDetails: cards,
+    cardDetails,
     priority: latestPriority
   }
+}
+
+/**
+ * 获取最大优先级
+ */
+export function getMaxPriority (): number {
+  return cardPriorities[cardPriorities.length - 1].priority
 }
