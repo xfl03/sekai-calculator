@@ -145,7 +145,7 @@ export class BaseDeckRecommend {
       const cardDetails = filterCardPriority(cards, priority)
       const cards0 = cardDetails.cardDetails.sort((a, b) => a.cardId - b.cardId)
       priority = cardDetails.priority
-      debugLog(`Recommend deck with ${cards.length} cards and priority is ${priority}`)
+      debugLog(`Recommend deck with ${cards0.length} cards and priority is ${priority}`)
       const recommend = BaseDeckRecommend.findBestCards(cards0,
         deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
         limit, isChallengeLive, member, honorBonus)
