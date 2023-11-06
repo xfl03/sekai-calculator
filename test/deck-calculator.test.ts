@@ -8,7 +8,7 @@ test('deck', async () => {
   const scoreUp = [100, 85, 80, 80, 80]
   const lifeRecovery = [0, 0, 0, 0, 0]
   const deck = await deckService.getDeckCards(await deckService.getDeck(1))
-  await deckCalculator.getDeckDetail(deck).then(it => {
+  await deckCalculator.getDeckDetail(deck, deck).then(it => {
     // console.log(it.cards)
     expect(it.power.total).toBe(276977)
     it.cards.forEach((it, i) => {

@@ -1,22 +1,24 @@
 import {
   ChallengeLiveDeckRecommend,
-  EventDeckRecommend,
-  CardCalculator,
   DeckCalculator,
   DeckService,
   EventCalculator,
+  EventDeckRecommend,
+  EventType,
+  EventService,
   LiveCalculator,
-  LiveType
+  LiveType,
+  type UserArea,
+  type UserCard
 } from '../src'
 import { TestDataProvider } from './data-provider.test'
-import { type UserCard, type UserArea } from '../src'
 
 const challengeRecommend = new ChallengeLiveDeckRecommend(TestDataProvider.INSTANCE)
 const eventRecommend = new EventDeckRecommend(TestDataProvider.INSTANCE)
 const liveCalculator = new LiveCalculator(TestDataProvider.INSTANCE)
 const deckCalculator = new DeckCalculator(TestDataProvider.INSTANCE)
 const deckService = new DeckService(TestDataProvider.INSTANCE)
-const cardCalculator = new CardCalculator(TestDataProvider.INSTANCE)
+const eventService = new EventService(TestDataProvider.INSTANCE)
 
 /**
  * 调整用户数据，拉满各项指标
@@ -63,7 +65,7 @@ test('challenge', async () => {
 test('event', async () => {
   // await maxUser()
   const musicMeta = await liveCalculator.getMusicMeta(74, 'master')
-  const cardDetails = await cardCalculator.batchGetCardDetail(await deckService.getDeckCards({
+  const cards = await deckService.getDeckCards({
     userId: 1145141919810,
     deckId: 1,
     name: 'ユニット01',
@@ -74,9 +76,9 @@ test('event', async () => {
     member3: 196,
     member4: 152,
     member5: 219
-  }), {}, 89)
-  const score = EventCalculator.getDeckEventPoint(
-    cardDetails, await deckCalculator.getHonorBonusPower(), musicMeta, LiveType.MULTI)
+  })
+  const deckDetail = await deckCalculator.getDeckDetail(cards, cards, await eventService.getEventConfig(89))
+  const score = EventCalculator.getDeckEventPoint(deckDetail, musicMeta, LiveType.MULTI, EventType.MARATHON)
   // console.log(`Current score:${score}`)
   const recommend0 = await eventRecommend.recommendEventDeck(89, LiveType.MULTI, {
     musicMeta,

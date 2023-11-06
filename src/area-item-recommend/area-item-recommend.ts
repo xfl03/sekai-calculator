@@ -66,7 +66,7 @@ export class AreaItemRecommend {
     const areaItems = await this.dataProvider.getMasterData<AreaItem>('areaItems')
     const currentAreaItemLevels = await this.areaItemService.getAreaItemLevels()
     const { power: currentPower } =
-      await this.deckCalculator.getDeckDetail(userCards, 0, currentAreaItemLevels)
+      await this.deckCalculator.getDeckDetail(userCards, userCards, {}, currentAreaItemLevels)
     const recommend = await Promise.all(areaItems.map(async areaItem => {
       const newAreaItemLevel = await this.areaItemService.getAreaItemNextLevel(
         areaItem, currentAreaItemLevels.find(it => it.areaItemId === areaItem.id)
@@ -75,7 +75,7 @@ export class AreaItemRecommend {
         ...currentAreaItemLevels.filter(it => it.areaItemId !== areaItem.id), newAreaItemLevel
       ]
       const { power: newPower } =
-        await this.deckCalculator.getDeckDetail(userCards, 0, newAreaItemLevels)
+        await this.deckCalculator.getDeckDetail(userCards, userCards, {}, newAreaItemLevels)
       return await this.getRecommendAreaItem(areaItem, newAreaItemLevel, newPower.total - currentPower.total)
     }))
     return recommend.filter(it => it.power > 0)

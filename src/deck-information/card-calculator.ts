@@ -11,17 +11,21 @@ import { CardEventCalculator } from '../event-point/card-event-calculator'
 import { type CardRarity } from '../master-data/card-rarity'
 import { AreaItemService } from '../area-item-information/area-item-service'
 import { type DeckCardPowerDetail, type DeckCardSkillDetail } from './deck-calculator'
+import { type EventConfig } from '../event-point/event-service'
+import { CardBloomEventCalculator } from '../event-point/card-bloom-event-calculator'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
   private readonly skillCalculator: CardSkillCalculator
   private readonly eventCalculator: CardEventCalculator
+  private readonly bloomEventCalculator: CardBloomEventCalculator
   private readonly areaItemService: AreaItemService
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.powerCalculator = new CardPowerCalculator(dataProvider)
     this.skillCalculator = new CardSkillCalculator(dataProvider)
     this.eventCalculator = new CardEventCalculator(dataProvider)
+    this.bloomEventCalculator = new CardBloomEventCalculator(dataProvider)
     this.areaItemService = new AreaItemService(dataProvider)
   }
 
@@ -102,9 +106,13 @@ export class CardCalculator {
    * @param userAreaItemLevels 用户拥有的区域道具等级
    * @param config 卡牌设置
    * @param eventId 活动ID（如果非0则计算活动加成）
+   * @param specialCharacterId 指定的角色ID（如果有则计算世界开花活动支援卡组加成）
    */
   public async getCardDetail (
-    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {}, eventId: number = 0
+    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {}, {
+      eventId = 0,
+      specialCharacterId = 0
+    }: EventConfig = {}
   ): Promise<CardDetail | undefined> {
     const cards = await this.dataProvider.getMasterData<Card>('cards')
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
@@ -119,6 +127,7 @@ export class CardCalculator {
     const power =
       await this.powerCalculator.getCardPower(userCard0, card, units, userAreaItemLevels)
     const eventBonus = eventId === 0 ? undefined : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
+    const supportDeckBonus = specialCharacterId === 0 ? undefined : await this.bloomEventCalculator.getCardSupportDeckBonus(userCard0, specialCharacterId)
     return {
       cardId: card.id,
       level: userCard0.level,
@@ -130,7 +139,8 @@ export class CardCalculator {
       attr: card.attr,
       power,
       skill,
-      eventBonus
+      eventBonus,
+      supportDeckBonus
     }
   }
 
@@ -138,17 +148,17 @@ export class CardCalculator {
    * 批量获取卡牌详细数据
    * @param userCards 多张卡牌
    * @param config 卡牌设置
-   * @param eventId 活动ID（如果非0则计算活动加成）
+   * @param eventConfig 活动设置
    * @param areaItemLevels （可选）纳入计算的区域道具等级
    */
   public async batchGetCardDetail (
-    userCards: UserCard[], config: Record<string, CardConfig> = {}, eventId: number = 0, areaItemLevels?: AreaItemLevel[]
+    userCards: UserCard[], config: Record<string, CardConfig> = {}, eventConfig?: EventConfig, areaItemLevels?: AreaItemLevel[]
   ): Promise<CardDetail[]> {
     const areaItemLevels0 = areaItemLevels === undefined
       ? await this.areaItemService.getAreaItemLevels()
       : areaItemLevels
     return await Promise.all(
-      userCards.map(async it => await this.getCardDetail(it, areaItemLevels0, config, eventId))
+      userCards.map(async it => await this.getCardDetail(it, areaItemLevels0, config, eventConfig))
     ).then(it => it.filter(it => it !== undefined)) as CardDetail[]
   }
 
@@ -182,6 +192,7 @@ export interface CardDetail {
   power: CardDetailMap<DeckCardPowerDetail>
   skill: CardDetailMap<DeckCardSkillDetail>
   eventBonus?: number
+  supportDeckBonus?: number
 }
 
 export interface CardConfig {

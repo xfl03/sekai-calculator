@@ -6,12 +6,16 @@ import { CardCalculator, type CardDetail } from './card-calculator'
 import { computeWithDefault, findOrThrow, getOrThrow } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
 import { type AreaItemLevel } from '../master-data/area-item-level'
+import { type EventConfig, type EventType } from '../event-point/event-service'
+import { safeNumber } from '../util/number-util'
 
 export class DeckCalculator {
   private readonly cardCalculator: CardCalculator
+  private readonly eventCalculator: EventCalculator
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.cardCalculator = new CardCalculator(dataProvider)
+    this.eventCalculator = new EventCalculator(dataProvider)
   }
 
   /**
@@ -31,9 +35,13 @@ export class DeckCalculator {
   /**
    * 计算给定的多张卡牌综合力、技能
    * @param cardDetails 处理好的卡牌详情（数组长度1-5，兼容挑战Live）
+   * @param allCards 参与计算的所有卡，按支援队伍加成从大到小排序
    * @param honorBonus 称号加成
+   * @param eventType 活动类型（用于算加成）
    */
-  public static getDeckDetailByCards (cardDetails: CardDetail[], honorBonus: number): DeckDetail {
+  public async getDeckDetailByCards (
+    cardDetails: CardDetail[], allCards: CardDetail[], honorBonus: number, eventType?: EventType
+  ): Promise<DeckDetail> {
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
     const map = new Map<string, number>()
     for (const cardDetail of cardDetails) {
@@ -93,10 +101,12 @@ export class DeckCalculator {
       }
     })
     // 计算卡组活动加成
-    const eventBonus = EventCalculator.getDeckBonus(cardDetails)
+    const eventBonus = await this.eventCalculator.getDeckBonus(cardDetails, eventType)
+    const supportDeckBonus = EventCalculator.getSupportDeckBonus(cardDetails, allCards)
     return {
       power,
       eventBonus,
+      supportDeckBonus,
       cards
     }
   }
@@ -104,18 +114,29 @@ export class DeckCalculator {
   /**
    * 根据用户卡组获得卡组详情
    * @param deckCards 用户卡组中的用户卡牌
-   * @param eventId （可选）活动ID
+   * @param allCards 用户全部卡牌
+   * @param eventConfig （可选）活动设置
    * @param areaItemLevels （可选）使用的区域道具
    */
-  public async getDeckDetail (deckCards: UserCard[], eventId: number = 0, areaItemLevels?: AreaItemLevel[]): Promise<DeckDetail> {
-    return DeckCalculator.getDeckDetailByCards(
-      await this.cardCalculator.batchGetCardDetail(deckCards, {}, eventId, areaItemLevels), await this.getHonorBonusPower())
+  public async getDeckDetail (
+    deckCards: UserCard[], allCards: UserCard[], eventConfig?: EventConfig, areaItemLevels?: AreaItemLevel[]
+  ): Promise<DeckDetail> {
+    let allCards0 = await this.cardCalculator.batchGetCardDetail(allCards, {}, eventConfig, areaItemLevels)
+    // 如果是给世界开花活动算的话，allCards一定要按支援加成从大到小排序
+    if (eventConfig?.specialCharacterId !== undefined && eventConfig.specialCharacterId > 0) {
+      allCards0 = allCards0.sort((a, b) => safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
+    }
+    return await this.getDeckDetailByCards(
+      await this.cardCalculator.batchGetCardDetail(deckCards, {}, eventConfig, areaItemLevels),
+      allCards0,
+      await this.getHonorBonusPower())
   }
 }
 
 export interface DeckDetail {
   power: DeckPowerDetail
   eventBonus?: number
+  supportDeckBonus?: number
   cards: DeckCardDetail[]
 }
 

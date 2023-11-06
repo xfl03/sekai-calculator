@@ -18,8 +18,8 @@ export class CardEventCalculator {
    * @private
    */
   private async getEventDeckBonus (eventId: number, card: Card): Promise<number> {
-    const eventDeckBonuses = await this.dataProvider.getMasterData('eventDeckBonuses') as EventDeckBonus[]
-    const gameCharacterUnits = await this.dataProvider.getMasterData('gameCharacterUnits') as GameCharacterUnit[]
+    const eventDeckBonuses = await this.dataProvider.getMasterData<EventDeckBonus>('eventDeckBonuses')
+    const gameCharacterUnits = await this.dataProvider.getMasterData<GameCharacterUnit>('gameCharacterUnits')
     return eventDeckBonuses.filter(it =>
       it.eventId === eventId &&
       (it.cardAttr === undefined || it.cardAttr === card.attr))
@@ -45,13 +45,14 @@ export class CardEventCalculator {
 
   /**
    * 获取单一卡牌的活动加成（含角色、属性、当期、突破加成）
+   * 返回值用到的时候还得/100
    * @param userCard 用户卡牌
    * @param eventId 活动ID
    */
   public async getCardEventBonus (userCard: UserCard, eventId: number): Promise<number> {
-    const cards = await this.dataProvider.getMasterData('cards') as Card[]
-    const eventCards = await this.dataProvider.getMasterData('eventCards') as EventCard[]
-    const eventRarityBonusRates = await this.dataProvider.getMasterData('eventRarityBonusRates') as EventRarityBonusRate[]
+    const cards = await this.dataProvider.getMasterData<Card>('cards')
+    const eventCards = await this.dataProvider.getMasterData<EventCard>('eventCards')
+    const eventRarityBonusRates = await this.dataProvider.getMasterData<EventRarityBonusRate>('eventRarityBonusRates')
 
     // 计算角色、属性加成
     let eventBonus = 0

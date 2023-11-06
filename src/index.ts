@@ -5,6 +5,7 @@ export * from './data-provider/cached-data-provider'
 // Service
 export * from './area-item-information/area-item-service'
 export * from './deck-information/deck-service'
+export * from './event-point/event-service'
 
 // Calculator
 export * from './deck-information/card-calculator'

@@ -8,7 +8,7 @@ import {
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
 import { duplicateObj, findOrThrow } from '../util/collection-util'
-import { type CardDetail } from '../deck-information/card-calculator'
+import { type ScoreFunction } from '../deck-recommend/base-deck-recommend'
 
 export class LiveCalculator {
   private readonly deckCalculator: DeckCalculator
@@ -213,7 +213,7 @@ export class LiveCalculator {
     deckCards: UserCard[], musicMeta: MusicMeta, liveType: LiveType,
     liveSkills: LiveSkill[] | undefined = undefined
   ): Promise<LiveDetail> {
-    const deckDetail = await this.deckCalculator.getDeckDetail(deckCards)
+    const deckDetail = await this.deckCalculator.getDeckDetail(deckCards, deckCards)
     // 如果给定了顺序就按顺序发动，没有的话就按最优发动
     const skills = liveType === LiveType.MULTI
       ? undefined
@@ -223,16 +223,23 @@ export class LiveCalculator {
 
   /**
    * 获取卡组Live分数
-   * @param deckCards 卡组
-   * @param honorBonus 称号加成
+   * @param deckDetail 卡组
    * @param musicMeta 歌曲信息
    * @param liveType Live类型
    */
   public static getLiveScoreByDeck (
-    deckCards: CardDetail[], honorBonus: number, musicMeta: MusicMeta, liveType: LiveType
+    deckDetail: DeckDetail, musicMeta: MusicMeta, liveType: LiveType
   ): number {
-    return LiveCalculator.getLiveDetailByDeck(
-      DeckCalculator.getDeckDetailByCards(deckCards, honorBonus), musicMeta, liveType).score
+    return LiveCalculator.getLiveDetailByDeck(deckDetail, musicMeta, liveType).score
+  }
+
+  /**
+   * 获取计算歌曲分数的函数
+   * @param liveType Live类型
+   */
+  public static getLiveScoreFunction (liveType: LiveType): ScoreFunction {
+    return (musicMeta, deckDetail) =>
+      LiveCalculator.getLiveScoreByDeck(deckDetail, musicMeta, liveType)
   }
 }
 

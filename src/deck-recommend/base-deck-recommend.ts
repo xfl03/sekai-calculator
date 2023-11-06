@@ -1,14 +1,20 @@
 import { type DataProvider } from '../data-provider/data-provider'
 import { CardCalculator, type CardConfig, type CardDetail } from '../deck-information/card-calculator'
-import { DeckCalculator, type DeckCardDetail, type DeckPowerDetail } from '../deck-information/deck-calculator'
-import { LiveCalculator, type LiveType } from '../live-score/live-calculator'
+import {
+  DeckCalculator,
+  type DeckCardDetail,
+  type DeckDetail,
+  type DeckPowerDetail
+} from '../deck-information/deck-calculator'
+import { LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
 import { containsAny, swap } from '../util/collection-util'
-import { EventCalculator } from '../event-point/event-calculator'
-import { filterCardPriority, getMaxPriority } from './card-priority-filter'
+import { filterCardPriority } from '../card-priority/card-priority-filter'
 import { updateDeck } from './deck-result-update'
 import { AreaItemService } from '../area-item-information/area-item-service'
+import { type EventConfig, EventType } from '../event-point/event-service'
+import { safeNumber } from '../util/number-util'
 
 export class BaseDeckRecommend {
   private readonly cardCalculator: CardCalculator
@@ -27,27 +33,29 @@ export class BaseDeckRecommend {
    * 复杂度O(n^member)，带大量剪枝
    * （按分数高到低排序）
    * @param cardDetails 参与计算的卡牌
+   * @param allCards 全部卡牌（按支援卡组加成排序）
    * @param scoreFunc 获得分数的公式
    * @param limit 需要推荐的卡组数量（按分数高到低）
    * @param isChallengeLive 是否挑战Live（人员可重复）
    * @param member 人数限制（2-5、默认5）
    * @param honorBonus 称号加成
+   * @param eventType （可选）活动类型
    * @param deckCards 计算过程中的当前卡组
    * @param deckCharacters 当前卡组的人员
    * @private
    */
-  private static findBestCards (
-    cardDetails: CardDetail[], scoreFunc: (deckCards: CardDetail[]) => number, limit: number = 1,
-    isChallengeLive: boolean = false, member: number = 5, honorBonus: number = 0, deckCards: CardDetail[] = [], deckCharacters: number[] = []
-  ): RecommendDeck[] {
+  private async findBestCards (
+    cardDetails: CardDetail[], allCards: CardDetail[], scoreFunc: (deckDetail: DeckDetail) => number, limit: number = 1,
+    isChallengeLive: boolean = false, member: number = 5, honorBonus: number = 0, eventType?: EventType, deckCards: CardDetail[] = [], deckCharacters: number[] = []
+  ): Promise<RecommendDeck[]> {
     // 防止挑战Live卡的数量小于允许上场的数量导致无法组队
     if (isChallengeLive) {
       member = Math.min(member, cardDetails.length)
     }
     // 已经是完整卡组，计算当前卡组的值
     if (deckCards.length === member) {
-      const score = scoreFunc(deckCards)
-      const deckDetail = DeckCalculator.getDeckDetailByCards(deckCards, honorBonus)
+      const deckDetail = await this.deckCalculator.getDeckDetailByCards(deckCards, allCards, honorBonus)
+      const score = scoreFunc(deckDetail)
       const cards = deckDetail.cards
       // 寻找加分效果最高的卡牌
       let bestScoreUp = cards[0].skill.scoreUp
@@ -69,7 +77,7 @@ export class BaseDeckRecommend {
       }
       // 不然就重新算调整过C位后的分数
       swap(deckCards, 0, bestScoreIndex)
-      return this.findBestCards(cardDetails, scoreFunc, limit, isChallengeLive, member, honorBonus, deckCards, deckCharacters)
+      return await this.findBestCards(cardDetails, allCards, scoreFunc, limit, isChallengeLive, member, honorBonus, eventType, deckCards, deckCharacters)
     }
     // 非完整卡组，继续遍历所有情况
     let ans: RecommendDeck[] = []
@@ -96,9 +104,9 @@ export class BaseDeckRecommend {
       if (preCard !== null && CardCalculator.isCertainlyLessThan(card, preCard)) continue
       preCard = card
       // 递归，寻找所有情况
-      const result = BaseDeckRecommend.findBestCards(
-        cardDetails, scoreFunc, limit, isChallengeLive, member,
-        honorBonus, [...deckCards, card], [...deckCharacters, card.characterId])
+      const result = await this.findBestCards(
+        cardDetails, allCards, scoreFunc, limit, isChallengeLive, member,
+        honorBonus, eventType, [...deckCards, card], [...deckCharacters, card.characterId])
       ans = updateDeck(ans, result, limit)
     }
     // 在最外层检查一下是否成功组队
@@ -120,7 +128,10 @@ export class BaseDeckRecommend {
    * @param member 限制人数（2-5、默认5）
    * @param cardConfig 卡牌设置
    * @param debugLog 测试日志处理函数
+   * @param liveType Live类型
    * @param eventId 活动ID（如果要计算活动PT的话）
+   * @param eventType 活动类型（如果要计算活动PT的话）
+   * @param specialCharacterId 指定角色ID（如果要计算世界开花活动PT的话）
    * @param isChallengeLive 是否挑战Live（人员可重复）
    */
   public async recommendHighScoreDeck (
@@ -130,51 +141,49 @@ export class BaseDeckRecommend {
       limit = 1,
       member = 5,
       cardConfig = {},
-      debugLog = (_: string) => {}
+      debugLog = (_: string) => {
+      }
     }: DeckRecommendConfig,
-    eventId: number = 0, isChallengeLive: boolean = false
+    liveType: LiveType,
+    {
+      eventId = 0,
+      eventType = EventType.NONE,
+      specialCharacterId = 0
+    }: EventConfig = {}
   ): Promise<RecommendDeck[]> {
     const areaItemLevels = await this.areaItemService.getAreaItemLevels()
-    const cards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventId, areaItemLevels)
+    let cards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig,
+      {
+        eventId,
+        specialCharacterId
+      }, areaItemLevels)
+    // 如果是世界开花活动用的，一定要按支援卡组加成从大到小排序
+    if (specialCharacterId > 0) {
+      cards = cards.sort((a, b) => safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
+    }
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
 
-    // 为了优化性能，会根据活动加成优先级筛选卡牌
-    const maxPriority = getMaxPriority()
-    let priority = (isChallengeLive || eventId === 0) ? maxPriority : -1 // 挑战Live不存在活动加成，所以无法按活动加成优先级筛选
-    while (priority <= maxPriority) {
-      const cardDetails = filterCardPriority(cards, priority)
-      const cards0 = cardDetails.cardDetails.sort((a, b) => a.cardId - b.cardId)
-      priority = cardDetails.priority
-      debugLog(`Recommend deck with ${cards0.length} cards and priority is ${priority}`)
-      const recommend = BaseDeckRecommend.findBestCards(cards0,
-        deckCards => scoreFunc(musicMeta, honorBonus, deckCards),
-        limit, isChallengeLive, member, honorBonus)
+    // 为了优化性能，会根据活动加成和卡牌稀有度优先级筛选卡牌
+    let preCardDetails = [] as CardDetail[]
+    while (true) {
+      const cardDetails = filterCardPriority(liveType, eventType, cards, preCardDetails, limit)
+      if (cardDetails.length === preCardDetails.length) {
+        // 如果所有卡牌都上阵了还是租不出队伍，就报错
+        throw new Error(`Cannot recommend any deck in ${cards.length} cards`)
+      }
+      preCardDetails = cardDetails
+      const cards0 = cardDetails.sort((a, b) => a.cardId - b.cardId)
+      debugLog(`Recommend deck with ${cards0.length}/${cards.length} cards `)
+      const recommend = await this.findBestCards(cards0,
+        cards,
+        deckDetail => scoreFunc(musicMeta, deckDetail),
+        limit, liveType === LiveType.CHALLENGE, member, honorBonus, eventType)
       if (recommend.length >= limit) return recommend
-      if (priority === maxPriority) break // 如果所有卡牌都上阵了还是租不出队伍，就报错
     }
-    throw new Error(`Cannot recommend any deck in ${cards.length} cards`)
-  }
-
-  /**
-   * 获取计算歌曲分数的函数
-   * @param liveType Live类型
-   */
-  public static getLiveScoreFunction (liveType: LiveType): ScoreFunction {
-    return (musicMeta, honorBonus, deckCards) =>
-      LiveCalculator.getLiveScoreByDeck(deckCards, honorBonus, musicMeta, liveType)
-  }
-
-  /**
-   * 获取计算活动PT的函数
-   * @param liveType Live类型
-   */
-  public static getEventPointFunction (liveType: LiveType): ScoreFunction {
-    return (musicMeta, honorBonus, deckCards) =>
-      EventCalculator.getDeckEventPoint(deckCards, honorBonus, musicMeta, liveType)
   }
 }
 
-export type ScoreFunction = (musicMeta: MusicMeta, honorBonus: number, deckCards: CardDetail[]) => number
+export type ScoreFunction = (musicMeta: MusicMeta, deckDetail: DeckDetail) => number
 
 export interface RecommendDeck {
   score: number
