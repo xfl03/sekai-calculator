@@ -1,5 +1,5 @@
 import { type CardDetail } from '../deck-information/card-calculator'
-import { computeWithDefault } from '../util/collection-util'
+import { computeWithDefault, mapToString } from '../util/collection-util'
 import { LiveType } from '../live-score/live-calculator'
 import { EventType } from '../event-point/event-service'
 import { challengeLiveCardPriorities } from './challenge-live-card-priority'
@@ -21,7 +21,7 @@ function checkAttrForBloomDfs (
 ): boolean {
   visit.set(attr, round)
   const charForAttr = attrMap.get(attr)
-  if (charForAttr === undefined) return false
+  if (charForAttr === undefined) throw new Error(`${attr} not found in map ${mapToString(attrMap)}`)
   // 如果还有角色未选择属性，直接选择
   for (const char of charForAttr) {
     if (!chars.has(char)) {
@@ -33,9 +33,9 @@ function checkAttrForBloomDfs (
   // 不然就要判断有没有角色的属性可以变更
   for (const char of charForAttr) {
     const attrForChar = chars.get(char)
-    if (attrForChar === undefined) continue
+    if (attrForChar === undefined) throw new Error(`${char} not found in map ${mapToString(chars)}`)
     const attrForCharRound = visit.get(attrForChar)
-    if (attrForCharRound === undefined) continue
+    if (attrForCharRound === undefined) throw new Error(`${attrForChar} not found in map ${mapToString(visit)}`)
     if (attrForCharRound !== round && checkAttrForBloomDfs(attrMap, attrs, chars, visit, round, attrForChar)) {
       chars.set(char, attr)
       attrs.set(attr, char)

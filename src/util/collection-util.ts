@@ -43,3 +43,17 @@ export function swap<K> (arr: K[], i: number, j: number): void {
   arr[i] = arr[j]
   arr[j] = t
 }
+
+interface Printable {
+  toString: () => string
+}
+
+export function mapToString<K extends Printable, V extends Printable> (map: Map<K, V>): string {
+  const strings: string[] = []
+  for (const key of map.keys()) {
+    const value = map.get(key)
+    if (value === undefined) throw new Error('Map to string failed.')
+    strings.push(`${key.toString()}->${value.toString()}`)
+  }
+  return strings.join(', ')
+}
