@@ -34,7 +34,7 @@ export class CardCalculator {
    * @param card 卡牌
    * @private
    */
-  private async getCardUnits (card: Card): Promise<string[]> {
+  public async getCardUnits (card: Card): Promise<string[]> {
     const gameCharacters = await this.dataProvider.getMasterData<GameCharacter>('gameCharacters')
     // 组合（V家支援组合、角色原始组合）
     const units = [] as string[]
@@ -126,8 +126,13 @@ export class CardCalculator {
     const skill = await this.skillCalculator.getCardSkill(userCard0, card)
     const power =
       await this.powerCalculator.getCardPower(userCard0, card, units, userAreaItemLevels)
-    const eventBonus = eventId === 0 ? undefined : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
-    const supportDeckBonus = specialCharacterId === 0 ? undefined : await this.bloomEventCalculator.getCardSupportDeckBonus(userCard0, specialCharacterId)
+    const eventBonus = eventId === 0
+      ? undefined
+      : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
+    const supportDeckBonus = specialCharacterId === 0
+      ? undefined
+      : await this.bloomEventCalculator.getCardSupportDeckBonus(userCard0,
+        { specialCharacterId })
     return {
       cardId: card.id,
       level: userCard0.level,

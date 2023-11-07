@@ -56,7 +56,7 @@ export interface EventConfig {
   eventId?: number
   eventType?: EventType
   /**
-   * 特殊角色ID，用于
+   * 特殊角色ID，用于世界开花活动
    */
   specialCharacterId?: number
 }

@@ -3,14 +3,31 @@ import { type UserCard } from '../user-data/user-card'
 import { type Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
 import { type WorldBloomSupportDeckBonus } from '../master-data/world-bloom-support-deck-bonus'
+import { type EventConfig } from './event-service'
+import { type GameCharacterUnit } from '../master-data/game-character-unit'
+import { CardCalculator } from '../deck-information/card-calculator'
 
 export class CardBloomEventCalculator {
+  private readonly cardCalculator: CardCalculator
   public constructor (private readonly dataProvider: DataProvider) {
+    this.cardCalculator = new CardCalculator(dataProvider)
   }
 
-  public async getCardSupportDeckBonus (userCard: UserCard, specialCharacterId: number): Promise<number> {
+  public async getCardSupportDeckBonus (userCard: UserCard, {
+    specialCharacterId = 0
+  }: EventConfig): Promise<number> {
+    if (specialCharacterId <= 0) return 0
     const cards = await this.dataProvider.getMasterData<Card>('cards')
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
+
+    // 需要先判断一张卡牌是否是指定组合，如果不是的话没有加成
+    const gameCharacterUnits =
+      await this.dataProvider.getMasterData<GameCharacterUnit>('gameCharacterUnits')
+    const specialUnit = findOrThrow(gameCharacterUnits,
+      it => it.gameCharacterId === specialCharacterId).unit
+    const cardUnits = await this.cardCalculator.getCardUnits(card)
+    if (!cardUnits.includes(specialUnit)) return 0
+
     const worldBloomSupportDeckBonuses =
       await this.dataProvider.getMasterData<WorldBloomSupportDeckBonus>('worldBloomSupportDeckBonuses')
     const bonus = findOrThrow(worldBloomSupportDeckBonuses,
