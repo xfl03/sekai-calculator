@@ -7,6 +7,79 @@ import { bloomCardPriorities } from './bloom-event-card-priority'
 import { marathonCheerfulCardPriorities } from './marathon-cheerful-event-card-priority'
 
 /**
+ * 使用DFS搜索增广路
+ * @param attrMap 属性->角色 多重映射
+ * @param attrs 属性->角色 唯一映射
+ * @param chars 角色->属性 唯一映射
+ * @param visit 属性->轮次 唯一映射
+ * @param round 当前轮次
+ * @param attr 属性
+ */
+function checkAttrForBloomDfs (
+  attrMap: Map<string, Set<number>>, attrs: Map<string, number>, chars: Map<number, string>,
+  visit: Map<string, number>, round: number, attr: string
+): boolean {
+  visit.set(attr, round)
+  const charForAttr = attrMap.get(attr)
+  if (charForAttr === undefined) return false
+  // 如果还有角色未选择属性，直接选择
+  for (const char of charForAttr) {
+    if (!chars.has(char)) {
+      chars.set(char, attr)
+      attrs.set(attr, char)
+      return true
+    }
+  }
+  // 不然就要判断有没有角色的属性可以变更
+  for (const char of charForAttr) {
+    const attrForChar = chars.get(char)
+    if (attrForChar === undefined) continue
+    const attrForCharRound = visit.get(attrForChar)
+    if (attrForCharRound === undefined) continue
+    if (attrForCharRound !== round && checkAttrForBloomDfs(attrMap, attrs, chars, visit, round, attrForChar)) {
+      chars.set(char, attr)
+      attrs.set(attr, char)
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * 为世界开花活动检查是否可以组出5种属性的队伍
+ * @param attrMap
+ */
+function checkAttrForBloom (attrMap: Map<string, Set<number>>): boolean {
+  // 满足不了5色的肯定不行
+  if (attrMap.size < 5) return false
+  let min = 114514
+  for (const v of attrMap.values()) {
+    min = Math.min(min, v.size)
+  }
+  // 如果所有属性的可选角色都大于等于5个，那肯定能满足5色队，不然就要进一步判断
+  if (min >= 5) return true
+
+  // 使用二分图最大匹配算法，左半边为5种属性、右半边为26位角色
+  // 复杂度O(nm)约等于130
+  const attrs = new Map<string, number>()
+  const chars = new Map<number, string>()
+  const visit = new Map<string, number>()
+  let ans = 0
+  let round = 0
+  while (true) {
+    round++
+    let count = 0
+    for (const attr of attrMap.keys()) {
+      if (!visit.has(attr) && checkAttrForBloomDfs(attrMap, attrs, chars, visit, round, attr)) count++
+    }
+    if (count === 0) break
+    ans += count
+  }
+
+  return ans === 5
+}
+
+/**
  * 判断某属性或者组合角色数量至少5个
  * @param liveType Live类型
  * @param eventType 活动类型
@@ -14,8 +87,6 @@ import { marathonCheerfulCardPriorities } from './marathon-cheerful-event-card-p
  * @param limit 卡组成员限制
  */
 function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: CardDetail[], limit: number = 5): boolean {
-  // 对于挑战Live来说，只要有卡够就可以组队了
-  if (liveType === LiveType.CHALLENGE) return cardDetails.length >= limit
   // 统计组合或者属性的不同角色出现次数
   const attrMap = new Map<string, Set<number>>()
   const unitMap = new Map<string, Set<number>>()
@@ -25,10 +96,23 @@ function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: Car
       computeWithDefault(unitMap, unit, new Set(), it => it.add(cardDetail.characterId))
     }
   }
+
+  if (liveType === LiveType.CHALLENGE) {
+    // 对于挑战Live来说，如果卡组数量小于5只要有卡够就可以组队了
+    if (limit < 5) {
+      return cardDetails.length >= limit
+    }
+    // 不然就要判断能否组出同色队伍
+    for (const v of attrMap.values()) {
+      if (v.size >= 5) return true
+    }
+    return false
+  }
+
   switch (eventType) {
     case EventType.MARATHON:
     case EventType.CHEERFUL:
-      // 对于马拉松、欢乐嘉年华活动来说，如果有任何一个大于等于5，就没问题
+      // 对于马拉松、欢乐嘉年华活动来说，如果有任何一个大于等于5（能组出同色或同队），就没问题
       for (const v of attrMap.values()) {
         if (v.size >= 5) return true
       }
@@ -38,7 +122,8 @@ function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: Car
       return false
     case EventType.BLOOM:
       // 对于世界开花活动，必须要满足能组出5种属性的队伍，且能组出一个团队
-      if (attrMap.size < 5) return false// 这样判断比较弱，有可能会让同一人有5种属性、其他人只有1种属性的情况通过
+      if (!checkAttrForBloom(attrMap)) return false
+      // 需要组出至少一个团队
       for (const v of unitMap.values()) {
         if (v.size >= 5) return true
       }

@@ -168,7 +168,7 @@ export class BaseDeckRecommend {
     while (true) {
       const cardDetails = filterCardPriority(liveType, eventType, cards, preCardDetails, limit)
       if (cardDetails.length === preCardDetails.length) {
-        // 如果所有卡牌都上阵了还是租不出队伍，就报错
+        // 如果所有卡牌都上阵了还是组不出队伍，就报错
         throw new Error(`Cannot recommend any deck in ${cards.length} cards`)
       }
       preCardDetails = cardDetails

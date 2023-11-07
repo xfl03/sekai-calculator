@@ -48,6 +48,8 @@ export * from './master-data/music-difficulty'
 export * from './master-data/music-vocal'
 export * from './master-data/shop-item'
 export * from './master-data/skill'
+export * from './master-data/world-bloom-different-attribute-bonus'
+export * from './master-data/world-bloom-support-deck-bonus'
 
 // User data struct
 export * from './user-data/user'

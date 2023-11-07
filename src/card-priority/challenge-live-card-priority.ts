@@ -13,21 +13,21 @@ export const challengeLiveCardPriorities: CardPriority[] = [
     eventBonus: 0,
     cardRarityType: 'rarity_birthday',
     masterRank: 0,
-    priority: 0
+    priority: 10
   }, {
     eventBonus: 0,
     cardRarityType: 'rarity_3',
     masterRank: 0,
-    priority: 0
+    priority: 20
   }, {
     eventBonus: 0,
     cardRarityType: 'rarity_2',
     masterRank: 0,
-    priority: 10
+    priority: 30
   }, {
     eventBonus: 0,
     cardRarityType: 'rarity_1',
     masterRank: 0,
-    priority: 20
+    priority: 40
   }
 ]
