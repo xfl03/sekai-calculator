@@ -11,7 +11,7 @@ function compareDeck (deck1: RecommendDeck, deck2: RecommendDeck): number {
   // 分数一样，按综合倒序
   if (deck1.power !== deck2.power) return deck2.power.total - deck1.power.total
   // 分数、综合一样，按C位CardID正序
-  return deck1.deckCards[0].cardId - deck2.deckCards[0].cardId
+  return deck1.cards[0].cardId - deck2.cards[0].cardId
 }
 
 /**
@@ -28,7 +28,7 @@ function removeSameDeck (it: RecommendDeck, i: number, arr: RecommendDeck[]): bo
   // 如果分数或者综合不一样，说明肯定不是同一队
   if (pre.score !== it.score || pre.power.total !== it.power.total) return true
   // 如果C位不一样，也不认为是同一队
-  return pre.deckCards[0].cardId !== it.deckCards[0].cardId
+  return pre.cards[0].cardId !== it.cards[0].cardId
 }
 
 /**

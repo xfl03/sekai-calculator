@@ -58,8 +58,8 @@ test('challenge', async () => {
   }).then(it => {
     // console.log(it)
     expect(it[0].score).toBeGreaterThanOrEqual(score)
-    const deck = DeckService.toUserChallengeLiveSoloDeck(it[0].deckCards, 24)
-    expect(deck.leader).toBe(it[0].deckCards[0].cardId)
+    const deck = DeckService.toUserChallengeLiveSoloDeck(it[0].cards, 24)
+    expect(deck.leader).toBe(it[0].cards[0].cardId)
   })
 })
 test('event', async () => {
@@ -87,8 +87,8 @@ test('event', async () => {
   // console.log(recommend0[0].deckCards)
   expect(recommend0[0].score).toBeGreaterThanOrEqual(score)
 
-  const deck = DeckService.toUserDeck(recommend0[0].deckCards)
-  expect(deck.leader).toBe(recommend0[0].deckCards[0].cardId)
+  const deck = DeckService.toUserDeck(recommend0[0].cards)
+  expect(deck.leader).toBe(recommend0[0].cards[0].cardId)
 
   const recommend1 = await eventRecommend.recommendEventDeck(89, LiveType.MULTI, {
     musicMeta,

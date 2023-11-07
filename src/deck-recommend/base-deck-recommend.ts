@@ -2,9 +2,7 @@ import { type DataProvider } from '../data-provider/data-provider'
 import { CardCalculator, type CardConfig, type CardDetail } from '../deck-information/card-calculator'
 import {
   DeckCalculator,
-  type DeckCardDetail,
-  type DeckDetail,
-  type DeckPowerDetail
+  type DeckDetail
 } from '../deck-information/deck-calculator'
 import { LiveType } from '../live-score/live-calculator'
 import { type UserCard } from '../user-data/user-card'
@@ -68,12 +66,9 @@ export class BaseDeckRecommend {
       })
       // 如果现在C位已经对了（加分技能最高的卡牌在C位）
       if (bestScoreIndex === 0) {
-        return [{
-          score,
-          power: deckDetail.power,
-          eventBonus: deckDetail.eventBonus,
-          deckCards: cards
-        }]
+        const ret = deckDetail as RecommendDeck
+        ret.score = score
+        return [ret]
       }
       // 不然就重新算调整过C位后的分数
       swap(deckCards, 0, bestScoreIndex)
@@ -185,11 +180,12 @@ export class BaseDeckRecommend {
 
 export type ScoreFunction = (musicMeta: MusicMeta, deckDetail: DeckDetail) => number
 
-export interface RecommendDeck {
+export interface RecommendDeck extends DeckDetail {
   score: number
-  power: DeckPowerDetail
-  eventBonus?: number
-  deckCards: DeckCardDetail[]
+  // power: DeckPowerDetail
+  // eventBonus?: number
+  // supportDeckBonus?: number
+  // deckCards: DeckCardDetail[]
 }
 
 export interface DeckRecommendConfig {
