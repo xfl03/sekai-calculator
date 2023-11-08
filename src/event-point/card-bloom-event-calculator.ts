@@ -16,6 +16,7 @@ export class CardBloomEventCalculator {
   public async getCardSupportDeckBonus (userCard: UserCard, {
     specialCharacterId = 0
   }: EventConfig): Promise<number> {
+    // 未指定角色的话，就按0支援加成算
     if (specialCharacterId <= 0) return 0
     const cards = await this.dataProvider.getMasterData<Card>('cards')
     const card = findOrThrow(cards, it => it.id === userCard.cardId)

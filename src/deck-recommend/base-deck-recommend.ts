@@ -52,7 +52,8 @@ export class BaseDeckRecommend {
     }
     // 已经是完整卡组，计算当前卡组的值
     if (deckCards.length === member) {
-      const deckDetail = await this.deckCalculator.getDeckDetailByCards(deckCards, allCards, honorBonus)
+      const deckDetail =
+        await this.deckCalculator.getDeckDetailByCards(deckCards, allCards, honorBonus, eventType)
       const score = scoreFunc(deckDetail)
       const cards = deckDetail.cards
       // 寻找加分效果最高的卡牌
@@ -126,6 +127,7 @@ export class BaseDeckRecommend {
    * @param liveType Live类型
    * @param eventId 活动ID（如果要计算活动PT的话）
    * @param eventType 活动类型（如果要计算活动PT的话）
+   * @param eventUnit 箱活的团队（用于把卡过滤到只剩该团队）
    * @param specialCharacterId 指定角色ID（如果要计算世界开花活动PT的话）
    * @param isChallengeLive 是否挑战Live（人员可重复）
    */
@@ -143,6 +145,7 @@ export class BaseDeckRecommend {
     {
       eventId = 0,
       eventType = EventType.NONE,
+      eventUnit = undefined,
       specialCharacterId = 0
     }: EventConfig = {}
   ): Promise<RecommendDeck[]> {
@@ -152,6 +155,14 @@ export class BaseDeckRecommend {
         eventId,
         specialCharacterId
       }, areaItemLevels)
+    // 过滤箱活的卡，不上其它组合的
+    if (eventUnit !== undefined) {
+      const originCardsLength = cards.length
+      cards = cards.filter(it =>
+        (it.units.length === 1 && it.units[0] === 'piapro') || it.units.includes(eventUnit))
+      debugLog(`Cards filtered with unit: ${cards.length}/${originCardsLength}`)
+      debugLog(cards.map(it => it.cardId).toString())
+    }
     // 如果是世界开花活动用的，一定要按支援卡组加成从大到小排序
     if (specialCharacterId > 0) {
       cards = cards.sort((a, b) => safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
@@ -169,6 +180,7 @@ export class BaseDeckRecommend {
       preCardDetails = cardDetails
       const cards0 = cardDetails.sort((a, b) => a.cardId - b.cardId)
       debugLog(`Recommend deck with ${cards0.length}/${cards.length} cards `)
+      debugLog(cards0.map(it => it.cardId).toString())
       const recommend = await this.findBestCards(cards0,
         cards,
         deckDetail => scoreFunc(musicMeta, deckDetail),

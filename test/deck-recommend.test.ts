@@ -55,6 +55,7 @@ test('challenge', async () => {
   await challengeRecommend.recommendChallengeLiveDeck(24, {
     musicMeta,
     limit: 1
+    // debugLog: (str) => { console.log(`Challenge: ${str}`) }
   }).then(it => {
     // console.log(it)
     expect(it[0].score).toBeGreaterThanOrEqual(score)
@@ -83,6 +84,7 @@ test('event', async () => {
   const recommend0 = await eventRecommend.recommendEventDeck(89, LiveType.MULTI, {
     musicMeta,
     limit: 1
+    // debugLog: (str) => { console.log(`Event0: ${str}`) }
   })
   // console.log(recommend0[0].deckCards)
   expect(recommend0[0].score).toBeGreaterThanOrEqual(score)
@@ -125,7 +127,20 @@ test('event', async () => {
         skillMax: false
       }
     }
+    // debugLog: (str) => { console.log(`Event1: ${str}`) }
   })
   // console.log(recommend1)
   expect(recommend1[0].score).toBeGreaterThanOrEqual(recommend0[0].score)
+})
+
+test('event', async () => {
+  const musicMeta = await liveCalculator.getMusicMeta(74, 'master')
+  const recommend0 = await eventRecommend.recommendEventDeck(112, LiveType.MULTI, {
+    musicMeta,
+    limit: 10,
+    debugLog: (str) => { console.log(`Bloom: ${str}`) }
+  }, 18)
+  console.log(recommend0.map(it => `${it.eventBonus !== undefined ? it.eventBonus : '0'}+${it.supportDeckBonus !== undefined ? it.supportDeckBonus : '0'} -> ${it.score}`))
+  expect(recommend0.length).toBeGreaterThanOrEqual(1)
+  expect(recommend0[0].supportDeckBonus).toBeGreaterThanOrEqual(1)
 })

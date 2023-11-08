@@ -128,8 +128,7 @@ export class DeckCalculator {
     }
     return await this.getDeckDetailByCards(
       await this.cardCalculator.batchGetCardDetail(deckCards, {}, eventConfig, areaItemLevels),
-      allCards0,
-      await this.getHonorBonusPower())
+      allCards0, await this.getHonorBonusPower(), eventConfig?.eventType)
   }
 }
 
