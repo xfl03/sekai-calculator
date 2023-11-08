@@ -12,7 +12,6 @@ import { filterCardPriority } from '../card-priority/card-priority-filter'
 import { updateDeck } from './deck-result-update'
 import { AreaItemService } from '../area-item-information/area-item-service'
 import { type EventConfig, EventType } from '../event-point/event-service'
-import { safeNumber } from '../util/number-util'
 
 export class BaseDeckRecommend {
   private readonly cardCalculator: CardCalculator
@@ -162,10 +161,6 @@ export class BaseDeckRecommend {
         (it.units.length === 1 && it.units[0] === 'piapro') || it.units.includes(eventUnit))
       debugLog(`Cards filtered with unit: ${cards.length}/${originCardsLength}`)
       debugLog(cards.map(it => it.cardId).toString())
-    }
-    // 如果是世界开花活动用的，一定要按支援卡组加成从大到小排序
-    if (specialCharacterId > 0) {
-      cards = cards.sort((a, b) => safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
     }
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
 

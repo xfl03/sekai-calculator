@@ -4,6 +4,8 @@ import { findOrThrow } from '../util/collection-util'
 import { type UserCard } from '../user-data/user-card'
 import { type UserChallengeLiveSoloDeck } from '../user-data/user-challenge-live-solo-deck'
 import { type DeckCardDetail } from './deck-calculator'
+import { type UserWorldBloomSupportDeck } from '../user-data/user-world-bloom-support-deck'
+import { type CardDetail } from '../card-information/card-calculator'
 
 export class DeckService {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -81,11 +83,12 @@ export class DeckService {
 
   /**
    * 给定卡牌组建新的用户挑战卡组
-   * @param userCards 卡牌（最少2张）
+   * @param userCards 卡牌（2～5张）
    * @param characterId 角色ID
    */
   public static toUserChallengeLiveSoloDeck (userCards: DeckCardDetail[], characterId: number): UserChallengeLiveSoloDeck {
-    if (userCards.length < 2) throw new Error('deck card should more than 1')
+    if (userCards.length < 2) throw new Error('deck card should >= 2')
+    if (userCards.length > 5) throw new Error('deck card should <= 5')
     return {
       characterId,
       leader: userCards[0].cardId,
@@ -93,6 +96,30 @@ export class DeckService {
       support2: userCards.length < 3 ? null : userCards[2].cardId,
       support3: userCards.length < 4 ? null : userCards[3].cardId,
       support4: userCards.length < 5 ? null : userCards[4].cardId
+    }
+  }
+
+  /**
+   * 给定卡牌组建新的用户世界连接应援卡组
+   * @param userCards 卡牌（0～12张）
+   * @param gameCharacterId 角色ID
+   */
+  public static toUserWorldBloomSupportDeck (userCards: CardDetail[], gameCharacterId: number): UserWorldBloomSupportDeck {
+    if (userCards.length > 12) throw new Error('deck card should <= 12')
+    return {
+      gameCharacterId,
+      member1: userCards.length < 1 ? null : userCards[0].cardId,
+      member2: userCards.length < 2 ? null : userCards[1].cardId,
+      member3: userCards.length < 3 ? null : userCards[2].cardId,
+      member4: userCards.length < 4 ? null : userCards[3].cardId,
+      member5: userCards.length < 5 ? null : userCards[4].cardId,
+      member6: userCards.length < 6 ? null : userCards[5].cardId,
+      member7: userCards.length < 7 ? null : userCards[6].cardId,
+      member8: userCards.length < 8 ? null : userCards[7].cardId,
+      member9: userCards.length < 9 ? null : userCards[8].cardId,
+      member10: userCards.length < 10 ? null : userCards[9].cardId,
+      member11: userCards.length < 11 ? null : userCards[10].cardId,
+      member12: userCards.length < 12 ? null : userCards[11].cardId
     }
   }
 }

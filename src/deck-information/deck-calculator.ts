@@ -7,7 +7,6 @@ import { computeWithDefault, findOrThrow, getOrThrow } from '../util/collection-
 import { EventCalculator } from '../event-point/event-calculator'
 import { type AreaItemLevel } from '../master-data/area-item-level'
 import { type EventConfig, type EventType } from '../event-point/event-service'
-import { safeNumber } from '../util/number-util'
 
 export class DeckCalculator {
   private readonly cardCalculator: CardCalculator
@@ -102,7 +101,7 @@ export class DeckCalculator {
     })
     // 计算卡组活动加成
     const eventBonus = await this.eventCalculator.getDeckBonus(cardDetails, eventType)
-    const supportDeckBonus = EventCalculator.getSupportDeckBonus(cardDetails, allCards)
+    const supportDeckBonus = EventCalculator.getSupportDeckBonus(cardDetails, allCards).bonus
     return {
       power,
       eventBonus,
@@ -121,11 +120,7 @@ export class DeckCalculator {
   public async getDeckDetail (
     deckCards: UserCard[], allCards: UserCard[], eventConfig?: EventConfig, areaItemLevels?: AreaItemLevel[]
   ): Promise<DeckDetail> {
-    let allCards0 = await this.cardCalculator.batchGetCardDetail(allCards, {}, eventConfig, areaItemLevels)
-    // 如果是给世界开花活动算的话，allCards一定要按支援加成从大到小排序
-    if (eventConfig?.specialCharacterId !== undefined && eventConfig.specialCharacterId > 0) {
-      allCards0 = allCards0.sort((a, b) => safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
-    }
+    const allCards0 = await this.cardCalculator.batchGetCardDetail(allCards, {}, eventConfig, areaItemLevels)
     return await this.getDeckDetailByCards(
       await this.cardCalculator.batchGetCardDetail(deckCards, {}, eventConfig, areaItemLevels),
       allCards0, await this.getHonorBonusPower(), eventConfig?.eventType)

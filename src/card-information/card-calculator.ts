@@ -12,6 +12,7 @@ import { type DeckCardPowerDetail, type DeckCardSkillDetail } from '../deck-info
 import { type EventConfig } from '../event-point/event-service'
 import { CardBloomEventCalculator } from '../event-point/card-bloom-event-calculator'
 import { CardService } from './card-service'
+import { safeNumber } from '../util/number-util'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
@@ -90,9 +91,14 @@ export class CardCalculator {
     const areaItemLevels0 = areaItemLevels === undefined
       ? await this.areaItemService.getAreaItemLevels()
       : areaItemLevels
-    return await Promise.all(
+    const ret = await Promise.all(
       userCards.map(async it => await this.getCardDetail(it, areaItemLevels0, config, eventConfig))
     ).then(it => it.filter(it => it !== undefined)) as CardDetail[]
+    // 如果是给世界开花活动算的话，allCards一定要按支援加成从大到小排序
+    if (eventConfig?.specialCharacterId !== undefined && eventConfig.specialCharacterId > 0) {
+      return ret.sort((a, b) => safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
+    }
+    return ret
   }
 
   /**

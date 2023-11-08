@@ -13,21 +13,27 @@ export class CardBloomEventCalculator {
     this.cardService = new CardService(dataProvider)
   }
 
+  /**
+   * 获取单张卡牌的支援加成
+   * 需要注意的是，支援卡组只能上对应团队的卡，其它卡上不了
+   * @param userCard 用户卡牌
+   * @param specialCharacterId 指定的加成角色
+   */
   public async getCardSupportDeckBonus (userCard: UserCard, {
     specialCharacterId = 0
-  }: EventConfig): Promise<number> {
-    // 未指定角色的话，就按0支援加成算
-    if (specialCharacterId <= 0) return 0
+  }: EventConfig): Promise<number | undefined> {
+    // 未指定角色的话，不使用支援加成
+    if (specialCharacterId <= 0) return undefined
     const cards = await this.dataProvider.getMasterData<Card>('cards')
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
 
-    // 需要先判断一张卡牌是否是指定组合，如果不是的话没有加成
+    // 需要先判断一张卡牌是否是指定组合，如果不是的话不使用支援加成
     const gameCharacterUnits =
       await this.dataProvider.getMasterData<GameCharacterUnit>('gameCharacterUnits')
     const specialUnit = findOrThrow(gameCharacterUnits,
       it => it.gameCharacterId === specialCharacterId).unit
     const cardUnits = await this.cardService.getCardUnits(card)
-    if (!cardUnits.includes(specialUnit)) return 0
+    if (!cardUnits.includes(specialUnit)) return undefined
 
     const worldBloomSupportDeckBonuses =
       await this.dataProvider.getMasterData<WorldBloomSupportDeckBonus>('worldBloomSupportDeckBonuses')

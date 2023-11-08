@@ -9,9 +9,10 @@ import {
   LiveCalculator,
   LiveType,
   type UserArea,
-  type UserCard
+  type UserCard, BloomSupportDeckRecommend
 } from '../src'
 import { TestDataProvider } from './data-provider.test'
+import { safeNumber } from '../src/util/number-util'
 
 const challengeRecommend = new ChallengeLiveDeckRecommend(TestDataProvider.INSTANCE)
 const eventRecommend = new EventDeckRecommend(TestDataProvider.INSTANCE)
@@ -133,14 +134,22 @@ test('event', async () => {
   expect(recommend1[0].score).toBeGreaterThanOrEqual(recommend0[0].score)
 })
 
-test('event', async () => {
+const bloomSupportRecommend = new BloomSupportDeckRecommend(TestDataProvider.INSTANCE)
+
+test('bloom', async () => {
   const musicMeta = await liveCalculator.getMusicMeta(74, 'master')
   const recommend0 = await eventRecommend.recommendEventDeck(112, LiveType.MULTI, {
     musicMeta,
     limit: 10,
-    debugLog: (str) => { console.log(`Bloom: ${str}`) }
+    debugLog: (str) => {
+      console.log(`Bloom: ${str}`)
+    }
   }, 18)
   console.log(recommend0.map(it => `${it.eventBonus !== undefined ? it.eventBonus : '0'}+${it.supportDeckBonus !== undefined ? it.supportDeckBonus : '0'} -> ${it.score}`))
   expect(recommend0.length).toBeGreaterThanOrEqual(1)
   expect(recommend0[0].supportDeckBonus).toBeGreaterThanOrEqual(1)
+
+  const recommend1 = await bloomSupportRecommend.recommendBloomSupportDeck(recommend0[0].cards, 18)
+  // console.log(recommend1.map(it => it.supportDeckBonus))
+  expect(recommend1.reduce((a, it) => a + safeNumber(it.supportDeckBonus), 0)).toBe(recommend0[0].supportDeckBonus)
 })

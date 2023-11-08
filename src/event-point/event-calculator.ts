@@ -97,21 +97,23 @@ export class EventCalculator {
    * @param deckCards 卡组
    * @param allCards 所有卡牌（按支援卡组加成从大到小排序）
    */
-  public static getSupportDeckBonus (deckCards: CardDetail[], allCards: CardDetail[]): number | undefined {
+  public static getSupportDeckBonus (deckCards: Array<{ cardId: number }>, allCards: CardDetail[]): { bonus: number, cards: CardDetail[] } {
     let bonus = 0
     let count = 0
-    // 如果没有预处理好支援卡组加成，则返回空
+    const cards: CardDetail[] = []
+    // 如果没有预处理好支援卡组加成，则跳过
     for (const card of allCards) {
-      if (card.supportDeckBonus === undefined) return undefined
+      if (card.supportDeckBonus === undefined) continue
       // 支援卡组的卡不能和主队伍重复，需要排除掉
-      if (deckCards.includes(card)) continue
+      if (deckCards.find(it => it.cardId === card.cardId) !== undefined) continue
       bonus += card.supportDeckBonus
       count++
+      cards.push(card)
       // 支援卡组为12张卡
-      if (count >= 12) return bonus
+      if (count >= 12) return { bonus, cards }
     }
     // 就算组不出12张卡也得返回
-    return bonus
+    return { bonus, cards }
   }
 
   /**

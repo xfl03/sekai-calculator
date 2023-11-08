@@ -1,6 +1,6 @@
 {
   "name": "sekai-calculator",
-  "version": "0.11.4",
+  "version": "0.11.5",
   "description": "Project SEKAI Calculator for deck power, live score, event point and more.",
   "type": "module",
   "types": "dist/index.d.ts",
