@@ -4,7 +4,7 @@ import { type Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
 import { type Skill } from '../master-data/skill'
 import { CardDetailMap } from './card-detail-map'
-import { type DeckCardSkillDetail } from './deck-calculator'
+import { type DeckCardSkillDetail } from '../deck-information/deck-calculator'
 
 export class CardSkillCalculator {
   public constructor (private readonly dataProvider: DataProvider) {

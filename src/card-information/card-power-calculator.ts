@@ -8,7 +8,7 @@ import { type AreaItemLevel } from '../master-data/area-item-level'
 import { type CharacterRank } from '../master-data/character-rank'
 import { type UserCharacter } from '../user-data/user-character'
 import { CardDetailMap } from './card-detail-map'
-import { type DeckCardPowerDetail } from './deck-calculator'
+import { type DeckCardPowerDetail } from '../deck-information/deck-calculator'
 
 export class CardPowerCalculator {
   public constructor (private readonly dataProvider: DataProvider) {

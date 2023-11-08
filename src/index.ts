@@ -4,13 +4,14 @@ export * from './data-provider/cached-data-provider'
 
 // Service
 export * from './area-item-information/area-item-service'
+export * from './card-information/card-service'
 export * from './deck-information/deck-service'
 export * from './event-point/event-service'
 
 // Calculator
-export * from './deck-information/card-calculator'
-export * from './deck-information/card-power-calculator'
-export * from './deck-information/card-skill-calculator'
+export * from './card-information/card-calculator'
+export * from './card-information/card-power-calculator'
+export * from './card-information/card-skill-calculator'
 export * from './deck-information/deck-calculator'
 export * from './event-point/card-event-calculator'
 export * from './event-point/event-calculator'

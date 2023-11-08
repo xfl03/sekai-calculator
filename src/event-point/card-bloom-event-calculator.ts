@@ -5,12 +5,12 @@ import { findOrThrow } from '../util/collection-util'
 import { type WorldBloomSupportDeckBonus } from '../master-data/world-bloom-support-deck-bonus'
 import { type EventConfig } from './event-service'
 import { type GameCharacterUnit } from '../master-data/game-character-unit'
-import { CardCalculator } from '../deck-information/card-calculator'
+import { CardService } from '../card-information/card-service'
 
 export class CardBloomEventCalculator {
-  private readonly cardCalculator: CardCalculator
+  private readonly cardService: CardService
   public constructor (private readonly dataProvider: DataProvider) {
-    this.cardCalculator = new CardCalculator(dataProvider)
+    this.cardService = new CardService(dataProvider)
   }
 
   public async getCardSupportDeckBonus (userCard: UserCard, {
@@ -25,7 +25,7 @@ export class CardBloomEventCalculator {
       await this.dataProvider.getMasterData<GameCharacterUnit>('gameCharacterUnits')
     const specialUnit = findOrThrow(gameCharacterUnits,
       it => it.gameCharacterId === specialCharacterId).unit
-    const cardUnits = await this.cardCalculator.getCardUnits(card)
+    const cardUnits = await this.cardService.getCardUnits(card)
     if (!cardUnits.includes(specialUnit)) return 0
 
     const worldBloomSupportDeckBonuses =

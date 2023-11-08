@@ -1,4 +1,4 @@
-import { type CardDetail } from '../deck-information/card-calculator'
+import { type CardDetail } from '../card-information/card-calculator'
 import { computeWithDefault, mapToString } from '../util/collection-util'
 import { LiveType } from '../live-score/live-calculator'
 import { EventType } from '../event-point/event-service'

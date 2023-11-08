@@ -1,5 +1,5 @@
 import { type DataProvider } from '../data-provider/data-provider'
-import { CardCalculator, type CardConfig, type CardDetail } from '../deck-information/card-calculator'
+import { CardCalculator, type CardConfig, type CardDetail } from '../card-information/card-calculator'
 import {
   DeckCalculator,
   type DeckDetail

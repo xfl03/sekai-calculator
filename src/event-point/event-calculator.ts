@@ -1,7 +1,7 @@
 import { type DataProvider } from '../data-provider/data-provider'
 import { CardEventCalculator } from './card-event-calculator'
 import { type UserCard } from '../user-data/user-card'
-import { type CardDetail } from '../deck-information/card-calculator'
+import { type CardDetail } from '../card-information/card-calculator'
 import { LiveCalculator, LiveType } from '../live-score/live-calculator'
 import { type MusicMeta } from '../common/music-meta'
 import { type ScoreFunction } from '../deck-recommend/base-deck-recommend'
