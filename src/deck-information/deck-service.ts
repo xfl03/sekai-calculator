@@ -87,12 +87,12 @@ export class DeckService {
    * @param characterId 角色ID
    */
   public static toUserChallengeLiveSoloDeck (userCards: DeckCardDetail[], characterId: number): UserChallengeLiveSoloDeck {
-    if (userCards.length < 2) throw new Error('deck card should >= 2')
+    if (userCards.length < 1) throw new Error('deck card should >= 1')
     if (userCards.length > 5) throw new Error('deck card should <= 5')
     return {
       characterId,
       leader: userCards[0].cardId,
-      support1: userCards[1].cardId,
+      support1: userCards.length < 2 ? null : userCards[1].cardId,
       support2: userCards.length < 3 ? null : userCards[2].cardId,
       support3: userCards.length < 4 ? null : userCards[3].cardId,
       support4: userCards.length < 5 ? null : userCards[4].cardId
