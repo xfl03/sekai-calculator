@@ -84,14 +84,16 @@ function checkAttrForBloom (attrMap: Map<string, Set<number>>): boolean {
  * @param liveType Live类型
  * @param eventType 活动类型
  * @param cardDetails 卡牌
- * @param limit 卡组成员限制
+ * @param member 卡组成员限制
  */
-function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: CardDetail[], limit: number = 5): boolean {
+function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: CardDetail[], member: number = 5): boolean {
   // 统计组合或者属性的不同角色出现次数
   const attrMap = new Map<string, Set<number>>()
   const unitMap = new Map<string, Set<number>>()
   for (const cardDetail of cardDetails) {
-    computeWithDefault(attrMap, cardDetail.attr, new Set(), it => it.add(cardDetail.characterId))
+    // 因为挑战Live的卡牌可以重复，所以属性要按卡的数量算
+    computeWithDefault(attrMap, cardDetail.attr, new Set(),
+      it => it.add(liveType === LiveType.CHALLENGE ? cardDetail.cardId : cardDetail.characterId))
     for (const unit of cardDetail.units) {
       computeWithDefault(unitMap, unit, new Set(), it => it.add(cardDetail.characterId))
     }
@@ -99,8 +101,8 @@ function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: Car
 
   if (liveType === LiveType.CHALLENGE) {
     // 对于挑战Live来说，如果卡组数量小于5只要有卡够就可以组队了
-    if (limit < 5) {
-      return cardDetails.length >= limit
+    if (member < 5) {
+      return cardDetails.length >= member
     }
     // 不然就要判断能否组出同色队伍
     for (const v of attrMap.values()) {
@@ -140,10 +142,10 @@ function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: Car
  * @param eventType 活动类型
  * @param cardDetails 卡牌
  * @param preCardDetails 上一次的卡牌，保证返回卡牌数量大于等于它，且能组成队伍
- * @param limit 卡组成员限制
+ * @param member 卡组成员限制
  */
 export function filterCardPriority (
-  liveType: LiveType, eventType: EventType, cardDetails: CardDetail[], preCardDetails: CardDetail[], limit: number = 5
+  liveType: LiveType, eventType: EventType, cardDetails: CardDetail[], preCardDetails: CardDetail[], member: number = 5
 ): CardDetail[] {
   const cardPriorities = getCardPriorities(liveType, eventType)
   let cards: CardDetail[] = []
@@ -152,7 +154,7 @@ export function filterCardPriority (
   for (const cardPriority of cardPriorities) {
     // 检查是否已经是符合优先级条件的完整卡组
     // 因为同一个优先级可能有不止一个情况，所以要等遍历到下个优先级后才能决定是否返回
-    if (cardPriority.priority > latestPriority && cards.length > preCardDetails.length && canMakeDeck(liveType, eventType, cards, limit)) {
+    if (cardPriority.priority > latestPriority && cards.length > preCardDetails.length && canMakeDeck(liveType, eventType, cards, member)) {
       return cards
     }
     latestPriority = cardPriority.priority

@@ -167,7 +167,7 @@ export class BaseDeckRecommend {
     // 为了优化性能，会根据活动加成和卡牌稀有度优先级筛选卡牌
     let preCardDetails = [] as CardDetail[]
     while (true) {
-      const cardDetails = filterCardPriority(liveType, eventType, cards, preCardDetails, limit)
+      const cardDetails = filterCardPriority(liveType, eventType, cards, preCardDetails, member)
       if (cardDetails.length === preCardDetails.length) {
         // 如果所有卡牌都上阵了还是组不出队伍，就报错
         throw new Error(`Cannot recommend any deck in ${cards.length} cards`)
