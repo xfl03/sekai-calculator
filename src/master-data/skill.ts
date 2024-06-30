@@ -8,6 +8,9 @@ export interface Skill {
     id: number
     skillEffectType: string
     activateNotesJudgmentType: string
+    activateCharacterRank?: number
+    activateUnitCount?: number
+    conditionType?: string
     skillEffectDetails: Array<{
       id: number
       level: number

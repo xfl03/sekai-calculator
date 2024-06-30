@@ -12,6 +12,8 @@ export interface Card {
   supportUnit: string
   skillId: number
   cardSkillName: string
+  specialTrainingSkillId?: number
+  specialTrainingSkillName?: string
   prefix: string
   assetbundleName: string
   gachaPhrase: string
