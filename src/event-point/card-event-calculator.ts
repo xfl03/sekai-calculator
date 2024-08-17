@@ -38,8 +38,8 @@ export class CardEventCalculator {
           return Math.max(v, eventDeckBonus.bonusRate)
         }
 
-        // 无应援组合的虚拟歌手享受15%（25%-10%）加成，有应援组合但不匹配的无加成
-        return Math.max(v, card.supportUnit === 'none' ? eventDeckBonus.bonusRate - 10 : 0)
+        // 无应援组合的虚拟歌手享受25%加成，有应援组合但不匹配的无加成
+        return Math.max(v, card.supportUnit === 'none' ? eventDeckBonus.bonusRate : 0)
       }, 0)
   }
 
