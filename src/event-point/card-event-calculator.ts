@@ -33,13 +33,12 @@ export class CardEventCalculator {
         // 角色不匹配
         if (gameCharacterUnit.gameCharacterId !== card.characterId) return v
 
-        // 非虚拟歌手或者组合正确的虚拟歌手，享受全量加成
-        if (card.characterId < 21 || card.supportUnit === gameCharacterUnit.unit) {
+        // 非虚拟歌手或者组合正确（或者无组合）的虚拟歌手，享受全量加成
+        if (card.characterId < 21 || card.supportUnit === gameCharacterUnit.unit || card.supportUnit === 'none') {
           return Math.max(v, eventDeckBonus.bonusRate)
         }
 
-        // 无应援组合的虚拟歌手享受25%加成，有应援组合但不匹配的无加成
-        return Math.max(v, card.supportUnit === 'none' ? eventDeckBonus.bonusRate : 0)
+        return v
       }, 0)
   }
 
