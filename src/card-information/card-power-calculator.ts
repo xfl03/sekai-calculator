@@ -250,15 +250,15 @@ export class CardPowerCalculator {
     }
 
     // 寻找对应的加成，如果没有任何加成会空
-    const fitureBonus = userFixtureBonuses
+    const fixtureBonus = userFixtureBonuses
       .find(it => it.gameCharacterId === characterId)
-    if (fitureBonus === undefined || fitureBonus === null) {
+    if (fixtureBonus === undefined || fixtureBonus === null) {
       return 0
     }
 
     // 按各个综合分别计算加成，其中totalBonusRate单位是0.1%
-    return CardPowerCalculator.mixBasePower(basePower, canvasBonus).reduce((v, it) => v +
-        Math.floor(Math.fround(it * Math.fround(fitureBonus.totalBonusRate * Math.fround(0.001)))), 0)
+    return Math.floor(Math.fround(CardPowerCalculator.mixBasePower(basePower, canvasBonus) *
+        Math.fround(Math.fround(fixtureBonus.totalBonusRate) * Math.fround(0.001))))
   }
 
   /**
@@ -282,17 +282,26 @@ export class CardPowerCalculator {
       }
     }
     // 按各个综合分别计算加成，其中powerBonusRate单位是1%
-    return CardPowerCalculator.mixBasePower(basePower, canvasBonus).reduce((v, it) => v +
-        Math.floor(Math.fround(it * Math.fround(Math.fround(powerBonusRate) * Math.fround(0.01)))), 0)
+    return Math.floor(Math.fround(CardPowerCalculator.mixBasePower(basePower, canvasBonus) *
+        Math.fround(Math.fround(powerBonusRate) * Math.fround(0.01))))
   }
 
   /**
-   * 混合面板值（基础属性+画布加成）
-   * @param basePower
-   * @param canvasBonus
+   * 混合面板值
+   * @param basePower 基础属性
+   * @param canvasBonus 画布加成
    * @private
    */
-  private static mixBasePower (basePower: number[], canvasBonus: number[]): number[] {
-    return [basePower[0] + canvasBonus[0], basePower[1] + canvasBonus[1], basePower[2] + canvasBonus[2]]
+  private static mixBasePower (basePower: number[], canvasBonus: number[]): number {
+    return CardPowerCalculator.sumPower(basePower) + CardPowerCalculator.sumPower(canvasBonus)
+  }
+
+  /**
+   * 求和综合力
+   * @param power 三维
+   * @private
+   */
+  private static sumPower (power: number[]): number {
+    return power.reduce((v, it) => v + it, 0)
   }
 }
