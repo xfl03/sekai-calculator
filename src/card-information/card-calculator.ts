@@ -13,6 +13,7 @@ import { type EventConfig } from '../event-point/event-service'
 import { CardBloomEventCalculator } from '../event-point/card-bloom-event-calculator'
 import { CardService } from './card-service'
 import { safeNumber } from '../util/number-util'
+import { type MysekaiGateBonus, MysekaiService } from '../mysekai-information/mysekai-service'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
@@ -21,6 +22,7 @@ export class CardCalculator {
   private readonly bloomEventCalculator: CardBloomEventCalculator
   private readonly areaItemService: AreaItemService
   private readonly cardService: CardService
+  private readonly mysekaiService: MysekaiService
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.powerCalculator = new CardPowerCalculator(dataProvider)
@@ -29,6 +31,7 @@ export class CardCalculator {
     this.bloomEventCalculator = new CardBloomEventCalculator(dataProvider)
     this.areaItemService = new AreaItemService(dataProvider)
     this.cardService = new CardService(dataProvider)
+    this.mysekaiService = new MysekaiService(dataProvider)
   }
 
   /**
@@ -38,12 +41,14 @@ export class CardCalculator {
    * @param config 卡牌设置
    * @param eventId 活动ID（如果非0则计算活动加成）
    * @param specialCharacterId 指定的角色ID（如果有则计算世界开花活动支援卡组加成）
+   * @param hasCanvasBonus 是否拥有自定义世界中的画布
+   * @param userGateBonuses 用户拥有的大门加成
    */
   public async getCardDetail (
     userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {}, {
       eventId = 0,
       specialCharacterId = 0
-    }: EventConfig = {}
+    }: EventConfig = {}, hasCanvasBonus: boolean, userGateBonuses: MysekaiGateBonus[]
   ): Promise<CardDetail | undefined> {
     const cards = await this.dataProvider.getMasterData<Card>('cards')
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
@@ -56,7 +61,8 @@ export class CardCalculator {
     const units = await this.cardService.getCardUnits(card)
     const skill = await this.skillCalculator.getCardSkill(userCard0, card)
     const power =
-      await this.powerCalculator.getCardPower(userCard0, card, units, userAreaItemLevels)
+      await this.powerCalculator.getCardPower(
+        userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses)
     const eventBonus = eventId === 0
       ? undefined
       : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
@@ -74,7 +80,8 @@ export class CardCalculator {
       power,
       skill,
       eventBonus,
-      supportDeckBonus
+      supportDeckBonus,
+      hasCanvasBonus
     }
   }
 
@@ -86,17 +93,25 @@ export class CardCalculator {
    * @param areaItemLevels （可选）纳入计算的区域道具等级
    */
   public async batchGetCardDetail (
-    userCards: UserCard[], config: Record<string, CardConfig> = {}, eventConfig?: EventConfig, areaItemLevels?: AreaItemLevel[]
+    userCards: UserCard[], config: Record<string, CardConfig> = {},
+    eventConfig?: EventConfig, areaItemLevels?: AreaItemLevel[]
   ): Promise<CardDetail[]> {
     const areaItemLevels0 = areaItemLevels === undefined
       ? await this.areaItemService.getAreaItemLevels()
       : areaItemLevels
+    // 自定义世界专项加成
+    const userCanvasBonusCards = await this.mysekaiService.getMysekaiCanvasBonusCards()
+    const userGateBonuses = await this.mysekaiService.getMysekaiGateBonuses()
+    // 每张卡单独计算
     const ret = await Promise.all(
-      userCards.map(async it => await this.getCardDetail(it, areaItemLevels0, config, eventConfig))
+      userCards.map(async it =>
+        await this.getCardDetail(it, areaItemLevels0, config, eventConfig, userCanvasBonusCards.includes(it.cardId),
+          userGateBonuses))
     ).then(it => it.filter(it => it !== undefined)) as CardDetail[]
     // 如果是给世界开花活动算的话，allCards一定要按支援加成从大到小排序
     if (eventConfig?.specialCharacterId !== undefined && eventConfig.specialCharacterId > 0) {
-      return ret.sort((a, b) => safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
+      return ret.sort((a, b) =>
+        safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
     }
     return ret
   }
@@ -132,6 +147,7 @@ export interface CardDetail {
   skill: CardDetailMap<DeckCardSkillDetail>
   eventBonus?: number
   supportDeckBonus?: number
+  hasCanvasBonus: boolean
 }
 
 export interface CardConfig {

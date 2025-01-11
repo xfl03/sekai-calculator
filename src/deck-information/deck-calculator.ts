@@ -63,21 +63,25 @@ export class DeckCalculator {
       ))
     })
 
-    const base = cardDetails.reduce((v, cardDetail) =>
-      v + getOrThrow(cardPower, cardDetail.cardId).base,
-    0)
-    const areaItemBonus = cardDetails.reduce((v, cardDetail) =>
-      v + getOrThrow(cardPower, cardDetail.cardId).areaItemBonus,
-    0)
-    const characterBonus = cardDetails.reduce((v, cardDetail) =>
-      v + getOrThrow(cardPower, cardDetail.cardId).characterBonus,
-    0)
+    const base = DeckCalculator.sumPower(cardDetails, cardPower, it => it.base)
+    const canvasBonus = DeckCalculator.sumPower(cardDetails, cardPower, it => it.canvasBonus)
+    const areaItemBonus = DeckCalculator.sumPower(cardDetails, cardPower,
+      it => it.areaItemBonus)
+    const characterBonus = DeckCalculator.sumPower(cardDetails, cardPower,
+      it => it.characterBonus)
+    const fixtureBonus = DeckCalculator.sumPower(cardDetails, cardPower,
+      it => it.fixtureBonus)
+    const gateBonus = DeckCalculator.sumPower(cardDetails, cardPower,
+      it => it.gateBonus)
     const total = base + areaItemBonus + characterBonus + honorBonus
     const power = {
       base,
+      canvasBonus,
       areaItemBonus,
       characterBonus,
       honorBonus,
+      fixtureBonus,
+      gateBonus,
       total
     }
 
@@ -108,6 +112,21 @@ export class DeckCalculator {
       supportDeckBonus,
       cards
     }
+  }
+
+  /**
+   * 求和单项综合力
+   * @param cardDetails 卡组
+   * @param cardPower 计算出来的综合力
+   * @param attr 单项综合力属性
+   * @private
+   */
+  private static sumPower (
+    cardDetails: CardDetail[], cardPower: Map<number, DeckCardPowerDetail>, attr: (_: DeckCardPowerDetail) => number
+  ): number {
+    return cardDetails.reduce((v, cardDetail) =>
+      v + attr(getOrThrow(cardPower, cardDetail.cardId)),
+    0)
   }
 
   /**
@@ -146,16 +165,22 @@ export interface DeckCardDetail {
 
 export interface DeckPowerDetail {
   base: number
+  canvasBonus: number
   areaItemBonus: number
   characterBonus: number
   honorBonus: number
+  fixtureBonus: number
+  gateBonus: number
   total: number
 }
 
 export interface DeckCardPowerDetail {
   base: number
+  canvasBonus: number
   areaItemBonus: number
   characterBonus: number
+  fixtureBonus: number
+  gateBonus: number
   total: number
 }
 
