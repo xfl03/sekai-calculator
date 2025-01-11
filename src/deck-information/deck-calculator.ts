@@ -73,7 +73,8 @@ export class DeckCalculator {
       it => it.fixtureBonus)
     const gateBonus = DeckCalculator.sumPower(cardDetails, cardPower,
       it => it.gateBonus)
-    const total = base + areaItemBonus + characterBonus + honorBonus
+    const total = DeckCalculator.sumPower(cardDetails, cardPower,
+      it => it.total)
     const power = {
       base,
       canvasBonus,
