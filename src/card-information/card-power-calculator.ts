@@ -257,8 +257,7 @@ export class CardPowerCalculator {
     }
 
     // 按各个综合分别计算加成，其中totalBonusRate单位是0.1%
-    const powers = [...basePower, ...canvasBonus]
-    return powers.reduce((v, it) => v +
+    return CardPowerCalculator.mixBasePower(basePower, canvasBonus).reduce((v, it) => v +
         Math.floor(Math.fround(it * Math.fround(fitureBonus.totalBonusRate * Math.fround(0.001)))), 0)
   }
 
@@ -283,8 +282,17 @@ export class CardPowerCalculator {
       }
     }
     // 按各个综合分别计算加成，其中powerBonusRate单位是1%
-    const powers = [...basePower, ...canvasBonus]
-    return powers.reduce((v, it) => v +
+    return CardPowerCalculator.mixBasePower(basePower, canvasBonus).reduce((v, it) => v +
         Math.floor(Math.fround(it * Math.fround(Math.fround(powerBonusRate) * Math.fround(0.01)))), 0)
+  }
+
+  /**
+   * 混合面板值（基础属性+画布加成）
+   * @param basePower
+   * @param canvasBonus
+   * @private
+   */
+  private static mixBasePower (basePower: number[], canvasBonus: number[]): number[] {
+    return [basePower[0] + canvasBonus[0], basePower[1] + canvasBonus[1], basePower[2] + canvasBonus[2]]
   }
 }
