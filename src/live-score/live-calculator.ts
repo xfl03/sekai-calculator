@@ -218,7 +218,9 @@ export class LiveCalculator {
     const skills = liveType === LiveType.MULTI
       ? undefined
       : LiveCalculator.getSoloLiveSkill(liveSkills, deckDetail.cards)
-    return LiveCalculator.getLiveDetailByDeck(deckDetail, musicMeta, liveType, skills)
+    const ret = LiveCalculator.getLiveDetailByDeck(deckDetail, musicMeta, liveType, skills)
+    ret.deck = deckDetail // 附加上卡组信息，方便debug
+    return ret
   }
 
   /**
@@ -248,6 +250,7 @@ export interface LiveDetail {
   time: number
   life: number
   tap: number
+  deck?: DeckDetail
 }
 
 export interface LiveSkill {

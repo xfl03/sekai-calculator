@@ -105,7 +105,7 @@ export class CardCalculator {
     // 每张卡单独计算
     const ret = await Promise.all(
       userCards.map(async it =>
-        await this.getCardDetail(it, areaItemLevels0, config, eventConfig, userCanvasBonusCards.includes(it.cardId),
+        await this.getCardDetail(it, areaItemLevels0, config, eventConfig, userCanvasBonusCards.has(it.cardId),
           userGateBonuses))
     ).then(it => it.filter(it => it !== undefined)) as CardDetail[]
     // 如果是给世界开花活动算的话，allCards一定要按支援加成从大到小排序

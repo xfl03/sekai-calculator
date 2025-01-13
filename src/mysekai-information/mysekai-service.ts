@@ -17,12 +17,12 @@ export class MysekaiService {
    * 看上去一个卡牌只有加成和不加成两种状态，直接返回卡牌ID列表
    * 计算逻辑：根据稀有度确定固定加成，不享受区域道具、角色等级加成，享受家具、大门加成
    */
-  public async getMysekaiCanvasBonusCards (): Promise<number[]> {
+  public async getMysekaiCanvasBonusCards (): Promise<Set<number>> {
     const userMysekaiCanvas = await this.dataProvider.getUserData<UserMysekaiCanvas[]>('userMysekaiCanvases')
     if (userMysekaiCanvas === undefined || userMysekaiCanvas === null) {
-      return []
+      return new Set<number>()
     }
-    return userMysekaiCanvas.map(it => it.cardId)
+    return new Set(userMysekaiCanvas.map(it => it.cardId)) // 加强检索性能
   }
 
   /**
