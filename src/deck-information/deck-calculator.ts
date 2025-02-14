@@ -64,7 +64,6 @@ export class DeckCalculator {
     })
 
     const base = DeckCalculator.sumPower(cardDetails, cardPower, it => it.base)
-    const canvasBonus = DeckCalculator.sumPower(cardDetails, cardPower, it => it.canvasBonus)
     const areaItemBonus = DeckCalculator.sumPower(cardDetails, cardPower,
       it => it.areaItemBonus)
     const characterBonus = DeckCalculator.sumPower(cardDetails, cardPower,
@@ -77,7 +76,6 @@ export class DeckCalculator {
       it => it.total) + honorBonus
     const power = {
       base,
-      canvasBonus,
       areaItemBonus,
       characterBonus,
       honorBonus,
@@ -166,7 +164,6 @@ export interface DeckCardDetail {
 
 export interface DeckPowerDetail {
   base: number
-  canvasBonus: number
   areaItemBonus: number
   characterBonus: number
   honorBonus: number
@@ -177,7 +174,6 @@ export interface DeckPowerDetail {
 
 export interface DeckCardPowerDetail {
   base: number
-  canvasBonus: number
   areaItemBonus: number
   characterBonus: number
   fixtureBonus: number

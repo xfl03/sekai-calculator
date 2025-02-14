@@ -34,31 +34,30 @@ export class CardPowerCalculator {
   ): Promise<CardDetailMap<DeckCardPowerDetail>> {
     const ret = new CardDetailMap<DeckCardPowerDetail>()
     // 处理区域道具以外的综合力，这些与队友无关
-    const basePower = await this.getCardBasePowers(userCard, card)
-    const canvasBonus = await this.getMysekaiCanvasBonus(card, hasCanvasBonus)
+    const basePower = await this.getCardBasePowers(userCard, card, hasCanvasBonus)
     const characterBonus = await this.getCharacterBonusPower(basePower, card.characterId)
-    const fixtureBonus = await this.getFixtureBonusPower(basePower, canvasBonus, card.characterId)
-    const gateBonus = await this.getGateBonusPower(basePower, canvasBonus, userGateBonuses, cardUnits)
+    const fixtureBonus = await this.getFixtureBonusPower(basePower, card.characterId)
+    const gateBonus = await this.getGateBonusPower(basePower, userGateBonuses, cardUnits)
     // 处理区域道具，每个组合和属性需要计算4种情况
     for (const unit of cardUnits) {
       // 同组合、同属性
       let power = await this.getPower(
-        card, basePower, canvasBonus, characterBonus, fixtureBonus, gateBonus,
+        card, basePower, characterBonus, fixtureBonus, gateBonus,
         userAreaItemLevels, unit, true, true)
       ret.set(unit, 5, 5, power.total, power)
       // 同组合、混属性
       power = await this.getPower(
-        card, basePower, canvasBonus, characterBonus, fixtureBonus, gateBonus,
+        card, basePower, characterBonus, fixtureBonus, gateBonus,
         userAreaItemLevels, unit, true, false)
       ret.set(unit, 5, 1, power.total, power)
       // 混组合、同属性
       power = await this.getPower(
-        card, basePower, canvasBonus, characterBonus, fixtureBonus, gateBonus,
+        card, basePower, characterBonus, fixtureBonus, gateBonus,
         userAreaItemLevels, unit, false, true)
       ret.set(unit, 1, 5, power.total, power)
       // 混组合、混属性
       power = await this.getPower(
-        card, basePower, canvasBonus, characterBonus, fixtureBonus, gateBonus,
+        card, basePower, characterBonus, fixtureBonus, gateBonus,
         userAreaItemLevels, unit, false, false)
       ret.set(unit, 1, 1, power.total, power)
     }
@@ -70,7 +69,6 @@ export class CardPowerCalculator {
    * 将基础综合、角色加成、区域道具加成三部分合一
    * @param card 卡牌
    * @param basePower 基础综合
-   * @param canvasBonusPower 画布加成
    * @param characterBonus 角色加成
    * @param fixtureBonus 家具加成
    * @param gateBonus 大门加成
@@ -81,32 +79,33 @@ export class CardPowerCalculator {
    * @private
    */
   private async getPower (
-    card: Card, basePower: number[], canvasBonusPower: number[], characterBonus: number,
+    card: Card, basePower: number[], characterBonus: number,
     fixtureBonus: number, gateBonus: number,
     userAreaItemLevels: AreaItemLevel[], unit: string, sameUnit: boolean, sameAttr: boolean
   ): Promise<DeckCardPowerDetail> {
-    const base = basePower.reduce((v, it) => v + it, 0)
-    const canvasBonus = canvasBonusPower.reduce((v, it) => v + it, 0)
+    const base = CardPowerCalculator.sumPower(basePower)
     const areaItemBonus = await this.getAreaItemBonusPower(
       userAreaItemLevels, basePower, card.characterId, unit, sameUnit, card.attr, sameAttr)
     return {
       base,
-      canvasBonus,
       areaItemBonus,
       characterBonus,
       fixtureBonus,
       gateBonus,
-      total: base + canvasBonus + areaItemBonus + characterBonus + fixtureBonus + gateBonus
+      total: base + areaItemBonus + characterBonus + fixtureBonus + gateBonus
     }
   }
 
   /**
-   * 获取卡牌基础综合力（含卡牌等级、觉醒、突破等级、前后篇），这部分综合力直接显示在卡牌右上角，分为3个子属性
+   * 获取卡牌基础综合力（含卡牌等级、觉醒、突破等级、前后篇、画布加成），这部分综合力直接显示在卡牌右上角，分为3个子属性
    * @param userCard 用户卡牌（要看卡牌等级、觉醒状态、突破等级、前后篇解锁状态）
    * @param card 卡牌
+   * @param hasMysekaiCanvas 是否拥有自定义世界中的画布（影响画布加成）
    * @private
    */
-  private async getCardBasePowers (userCard: UserCard, card: Card): Promise<number[]> {
+  private async getCardBasePowers (
+    userCard: UserCard, card: Card, hasMysekaiCanvas: boolean
+  ): Promise<number[]> {
     const [
       cardEpisodes,
       masterLessons
@@ -131,7 +130,7 @@ export class CardPowerCalculator {
     }
     // 剧情
     const episodes = userCard.episodes === undefined
-      ? []// 有一张卡没剧情
+      ? []// 有些卡没剧情
       : userCard.episodes.filter(it => it.scenarioStatus === 'already_read')
         .map(it =>
           findOrThrow(cardEpisodes, e => e.id === it.cardEpisodeId))
@@ -148,18 +147,7 @@ export class CardPowerCalculator {
       ret[1] += masterLesson.power2BonusFixed
       ret[2] += masterLesson.power3BonusFixed
     }
-    return ret
-  }
-
-  /**
-   * 获得自定义世界画布加成
-   * 这项加成看似在基础属性中，其实不享受区域道具、角色等级加成，但会享受自定义世界家具、门加成，所以需要单独拿出来算
-   * @param card 卡牌
-   * @param hasMysekaiCanvas 是否拥有自定义世界中的画布
-   */
-  private async getMysekaiCanvasBonus (card: Card, hasMysekaiCanvas: boolean): Promise<number[]> {
-    const ret = [0, 0, 0]
-    // 自定义世界画布加成
+    // 从5.1.0版本开始，画布加成直接算进基础综合力中
     if (hasMysekaiCanvas) {
       const cardMysekaiCanvasBonuses = await this.dataProvider.getMasterData<CardMysekaiCanvasBonus>('cardMysekaiCanvasBonuses')
       const canvasBonus = findOrThrow(cardMysekaiCanvasBonuses, it => it.cardRarityType === card.cardRarityType)
@@ -238,10 +226,9 @@ export class CardPowerCalculator {
   /**
    * 计算自定义世界中的家具加成（玩偶）
    * @param basePower 卡牌基础综合力
-   * @param canvasBonus 画布增加的综合力
    * @param characterId 角色ID
    */
-  private async getFixtureBonusPower (basePower: number[], canvasBonus: number[], characterId: number): Promise<number> {
+  private async getFixtureBonusPower (basePower: number[], characterId: number): Promise<number> {
     const userFixtureBonuses =
         await this.dataProvider.getUserData<UserMysekaiFixtureGameCharacterPerformanceBonus[]>(
           'userMysekaiFixtureGameCharacterPerformanceBonuses')
@@ -257,7 +244,7 @@ export class CardPowerCalculator {
     }
 
     // 按各个综合分别计算加成，其中totalBonusRate单位是0.1%
-    return Math.floor(Math.fround(CardPowerCalculator.mixBasePower(basePower, canvasBonus) *
+    return Math.floor(Math.fround(CardPowerCalculator.sumPower(basePower) *
         Math.fround(Math.fround(fixtureBonus.totalBonusRate) * Math.fround(0.001))))
   }
 
@@ -265,12 +252,11 @@ export class CardPowerCalculator {
    * 自定义世界的大门加成
    * 如果是无应援的V家角色，按最大加成算
    * @param basePower 基础综合
-   * @param canvasBonus 画布加成
    * @param userGateBonuses 当前生效的门加成
    * @param cardUnits 当前卡有的组合
    */
   private async getGateBonusPower (
-    basePower: number[], canvasBonus: number[], userGateBonuses: MysekaiGateBonus[], cardUnits: string[]
+    basePower: number[], userGateBonuses: MysekaiGateBonus[], cardUnits: string[]
   ): Promise<number> {
     // 因为没有专门的V家加成，需要特殊判定无应援的V家角色
     const isOnlyPiapro = cardUnits.length === 1 && cardUnits[0] === 'piapro'
@@ -282,18 +268,8 @@ export class CardPowerCalculator {
       }
     }
     // 按各个综合分别计算加成，其中powerBonusRate单位是1%
-    return Math.floor(Math.fround(CardPowerCalculator.mixBasePower(basePower, canvasBonus) *
+    return Math.floor(Math.fround(CardPowerCalculator.sumPower(basePower) *
         Math.fround(Math.fround(powerBonusRate) * Math.fround(0.01))))
-  }
-
-  /**
-   * 混合面板值
-   * @param basePower 基础属性
-   * @param canvasBonus 画布加成
-   * @private
-   */
-  private static mixBasePower (basePower: number[], canvasBonus: number[]): number {
-    return CardPowerCalculator.sumPower(basePower) + CardPowerCalculator.sumPower(canvasBonus)
   }
 
   /**
