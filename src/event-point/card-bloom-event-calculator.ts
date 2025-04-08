@@ -6,6 +6,9 @@ import { type WorldBloomSupportDeckBonus } from '../master-data/world-bloom-supp
 import { type EventConfig } from './event-service'
 import { type GameCharacterUnit } from '../master-data/game-character-unit'
 import { CardService } from '../card-information/card-service'
+import {
+  type WorldBloomSupportDeckUnitEventLimitedBonus
+} from '../master-data/world-bloom-support-deck-unit-event-limited-bonus'
 
 export class CardBloomEventCalculator {
   private readonly cardService: CardService
@@ -17,9 +20,11 @@ export class CardBloomEventCalculator {
    * 获取单张卡牌的支援加成
    * 需要注意的是，支援卡组只能上对应团队的卡，其它卡上不了
    * @param userCard 用户卡牌
+   * @param eventId 活动ID
    * @param specialCharacterId 指定的加成角色
    */
   public async getCardSupportDeckBonus (userCard: UserCard, {
+    eventId = 0,
     specialCharacterId = 0
   }: EventConfig): Promise<number | undefined> {
     // 未指定角色的话，不使用支援加成
@@ -53,6 +58,15 @@ export class CardBloomEventCalculator {
     total += findOrThrow(bonus.worldBloomSupportDeckSkillLevelBonuses,
       it => it.skillLevel === userCard.skillLevel).bonusRate
 
+    // 4.5周年，新增了上一期WL卡牌额外加成
+    const worldBloomSupportDeckUnitEventLimitedBonuses =
+        await this.dataProvider.getMasterData<WorldBloomSupportDeckUnitEventLimitedBonus>('worldBloomSupportDeckUnitEventLimitedBonuses')
+    for (const bonus of worldBloomSupportDeckUnitEventLimitedBonuses) {
+      // 找到合适的卡牌加成
+      if (bonus.eventId === eventId && bonus.gameCharacterId === specialCharacterId && bonus.cardId === card.id) {
+        total += bonus.bonusRate
+      }
+    }
     return total
   }
 }

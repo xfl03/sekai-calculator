@@ -109,10 +109,10 @@ export class EventCalculator {
       bonus += card.supportDeckBonus
       count++
       cards.push(card)
-      // 支援卡组为12张卡
-      if (count >= 12) return { bonus, cards }
+      // 4.5周年之后，支援卡组为20张卡
+      if (count >= 20) return { bonus, cards }
     }
-    // 就算组不出12张卡也得返回
+    // 就算组不出完整的支援卡组也得返回
     return { bonus, cards }
   }
 
