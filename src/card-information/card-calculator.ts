@@ -67,7 +67,7 @@ export class CardCalculator {
       ? undefined
       : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
     const supportDeckBonus =
-      await this.bloomEventCalculator.getCardSupportDeckBonus(userCard0, { specialCharacterId })
+      await this.bloomEventCalculator.getCardSupportDeckBonus(userCard0, { eventId, specialCharacterId })
     return {
       cardId: card.id,
       level: userCard0.level,
