@@ -12,4 +12,12 @@ export interface UserWorldBloomSupportDeck {
   member10: number | null
   member11: number | null
   member12: number | null
+  member13: number | null
+  member14: number | null
+  member15: number | null
+  member16: number | null
+  member17: number | null
+  member18: number | null
+  member19: number | null
+  member20: number | null
 }

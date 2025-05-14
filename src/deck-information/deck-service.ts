@@ -105,7 +105,7 @@ export class DeckService {
    * @param gameCharacterId 角色ID
    */
   public static toUserWorldBloomSupportDeck (userCards: CardDetail[], gameCharacterId: number): UserWorldBloomSupportDeck {
-    if (userCards.length > 12) throw new Error('deck card should <= 12')
+    if (userCards.length > 20) throw new Error('deck card should <= 20')
     return {
       gameCharacterId,
       member1: userCards.length < 1 ? null : userCards[0].cardId,
@@ -119,7 +119,15 @@ export class DeckService {
       member9: userCards.length < 9 ? null : userCards[8].cardId,
       member10: userCards.length < 10 ? null : userCards[9].cardId,
       member11: userCards.length < 11 ? null : userCards[10].cardId,
-      member12: userCards.length < 12 ? null : userCards[11].cardId
+      member12: userCards.length < 12 ? null : userCards[11].cardId,
+      member13: userCards.length < 13 ? null : userCards[12].cardId,
+      member14: userCards.length < 14 ? null : userCards[13].cardId,
+      member15: userCards.length < 15 ? null : userCards[14].cardId,
+      member16: userCards.length < 16 ? null : userCards[15].cardId,
+      member17: userCards.length < 17 ? null : userCards[16].cardId,
+      member18: userCards.length < 18 ? null : userCards[17].cardId,
+      member19: userCards.length < 19 ? null : userCards[18].cardId,
+      member20: userCards.length < 20 ? null : userCards[19].cardId
     }
   }
 }
