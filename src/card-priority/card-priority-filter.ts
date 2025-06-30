@@ -100,15 +100,15 @@ function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: Car
   }
 
   if (liveType === LiveType.CHALLENGE) {
-    // 对于挑战Live来说，如果卡组数量小于5只要有卡够就可以组队了
+    // 对于挑战Live来说，如果卡组数量小于5（无双倍属性加成）只要有卡够就可以组队了
     if (member < 5) {
       return cardDetails.length >= member
     }
-    // 不然就要判断能否组出同色队伍
+    // 不然就要判断能否组出所有属性的同色队伍（双倍属性加成可能会抵消一些低稀有度损失）
     for (const v of attrMap.values()) {
-      if (v.size >= 5) return true
+      if (v.size < 5) return false
     }
-    return false
+    return true
   }
 
   switch (eventType) {
