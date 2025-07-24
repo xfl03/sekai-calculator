@@ -17,6 +17,7 @@ export interface Skill {
       activateEffectDuration: number
       activateEffectValueType: string
       activateEffectValue: number
+      activateEffectValue2?: number
     }>
     skillEnhance?: {
       id: number

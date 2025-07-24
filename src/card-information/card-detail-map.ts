@@ -9,15 +9,14 @@ export class CardDetailMap<T> {
   /**
    * 设定给定情况下的值
    * 为了减少内存消耗，人数并非在所有情况下均为实际值，可能会用1代表混组或无影响
-   * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）
-   * @param unitMember 该组合对应的人数（用于受组合影响的技能时，1-5、其他情况，5人为同组、1人为混组或无影响）
+   * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）；任意情况：any；新FES原创觉醒前（异组）：diff
+   * @param unitMember 该组合对应的人数（用于受组合影响的技能时：组分1～5、异组1～2；其他情况：5人为同组、1人为混组或无影响）
    * @param attrMember 卡牌属性对应的人数（5人为同色、1人为混色或无影响）
-   * @param cmpValue
+   * @param cmpValue 用于设置最小值、最大值的可比较值
    * @param value 设定的值
    */
   public set (unit: string, unitMember: number, attrMember: number, cmpValue: number, value: T): void {
-    this.min = Math.min(this.min, cmpValue)
-    this.max = Math.max(this.max, cmpValue)
+    this.updateMinMax(cmpValue)
     this.values.set(CardDetailMap.getKey(unit, unitMember, attrMember), value)
   }
 
@@ -36,11 +35,25 @@ export class CardDetailMap<T> {
     // 有可能unitMember在混组的时候优化成1了
     best = this.getInternal(unit, unitMember === 5 ? 5 : 1, attrMember0)
     if (best !== undefined) return best
+    // 有可能是混组技能，被优化成了1或2
+    if (unit === 'diff') {
+      best = this.getInternal('diff', Math.min(2, unitMember), 1)
+      if (best !== undefined) return best
+    }
     // 有可能因为技能是固定数值，attrMember、unitMember都优化成1了，组合直接为any
     best = this.getInternal('any', 1, 1)
     if (best !== undefined) return best
     // 如果这还找不到，说明给的情况就不对
     throw new Error('case not found')
+  }
+
+  /**
+   * 更新最大最小值（不在values中存储值本身）
+   * @param cmpValue 用于比较的值
+   */
+  private updateMinMax (cmpValue: number): void {
+    this.min = Math.min(this.min, cmpValue)
+    this.max = Math.max(this.max, cmpValue)
   }
 
   private getInternal (unit: string, unitMember: number, attrMember: number): T | undefined {

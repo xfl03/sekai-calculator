@@ -53,14 +53,17 @@ export class DeckCalculator {
     // 计算当前卡组的综合力，要加上称号的固定加成
     const cardPower = new Map<number, DeckCardPowerDetail>()
     cardDetails.forEach(cardDetail => {
-      cardPower.set(cardDetail.cardId, cardDetail.units.reduce((vv, unit) => {
-        const current = cardDetail.power.get(unit, getOrThrow(map, unit), getOrThrow(map, cardDetail.attr))
-        // 有多个组合时，取最高加成组合
-        return current.total > vv.total ? current : vv
-      },
-      // 随便取一个当默认值
-      cardDetail.power.get(cardDetail.units[0], getOrThrow(map, cardDetail.units[0]), getOrThrow(map, cardDetail.attr))
-      ))
+      cardPower.set(cardDetail.cardId,
+        cardDetail.units.reduce((vv, unit) => {
+          const current =
+            cardDetail.power.get(unit, getOrThrow(map, unit), getOrThrow(map, cardDetail.attr))
+          // 有多个组合时，取最高加成组合
+          return current.total > vv.total ? current : vv
+        },
+        // 随便取一个当默认值
+        cardDetail.power.get(cardDetail.units[0],
+          getOrThrow(map, cardDetail.units[0]), getOrThrow(map, cardDetail.attr))
+        ))
     })
 
     const base = DeckCalculator.sumPower(cardDetails, cardPower, it => it.base)
@@ -85,13 +88,38 @@ export class DeckCalculator {
     }
 
     // 计算当前卡组的技能效果，并归纳卡牌在队伍中的详情信息
-    const cards = cardDetails.map(cardDetail => {
-      const skill = cardDetail.units.reduce((vv, unit) => {
-      // 有多个组合时，取最高组合
-        const current = cardDetail.skill.get(unit, getOrThrow(map, unit), 1)
-        return current.scoreUp > vv.scoreUp ? current : vv
-      },
-      cardDetail.skill.get(cardDetail.units[0], getOrThrow(map, cardDetail.units[0]), 1))
+    const cardsPrepare = cardDetails.map(cardDetail => {
+      const skillPrepare =
+          cardDetail.units.reduce((vv, unit) => {
+            // 有多个组合时，取最高组合
+            const current = cardDetail.skill.get(unit, getOrThrow(map, unit), 1)
+            return current.scoreUpFixed > vv.scoreUpFixed ? current : vv
+          },
+          // 取新FES V家觉醒前的异组合为默认值
+          cardDetail.skill.get('diff', map.size - 1, 1))
+      return {
+        cardDetail,
+        skillPrepare
+      }
+    })
+
+    // 预备完技能效果后，再计算吸技能
+    const cards = cardsPrepare.map(it => {
+      const { cardDetail, skillPrepare } = it
+      let scoreUp = skillPrepare.scoreUpFixed
+      // 针对吸技能的情况特殊计算
+      if (skillPrepare.scoreUpReference !== undefined) {
+        // 计算其他卡中最高的被吸技能效果
+        const otherCardSkillMax = cardsPrepare
+          .filter(it => it.cardDetail.cardId !== cardDetail.cardId)
+          .reduce((v, it) =>
+            Math.max(v, it.skillPrepare.scoreUpToReference), 0)
+        const { scoreUpReference } = skillPrepare
+        // 按比例吸技能，并更新结果
+        let newScoreUp = scoreUpReference.base + Math.floor(otherCardSkillMax * scoreUpReference.rate / 100)
+        newScoreUp = Math.min(newScoreUp, scoreUpReference.max) // 有上限
+        scoreUp = Math.max(scoreUp, newScoreUp) // 取最高
+      }
       return {
         cardId: cardDetail.cardId,
         level: cardDetail.level,
@@ -99,9 +127,13 @@ export class DeckCalculator {
         masterRank: cardDetail.masterRank,
         power: getOrThrow(cardPower, cardDetail.cardId),
         eventBonus: cardDetail.eventBonus,
-        skill
+        skill: {
+          scoreUp,
+          lifeRecovery: skillPrepare.lifeRecovery
+        }
       }
     })
+
     // 计算卡组活动加成
     const eventBonus = await this.eventCalculator.getDeckBonus(cardDetails, eventType)
     const supportDeckBonus = EventCalculator.getSupportDeckBonus(cardDetails, allCards).bonus
@@ -121,7 +153,8 @@ export class DeckCalculator {
    * @private
    */
   private static sumPower (
-    cardDetails: CardDetail[], cardPower: Map<number, DeckCardPowerDetail>, attr: (_: DeckCardPowerDetail) => number
+    cardDetails: CardDetail[], cardPower: Map<number, DeckCardPowerDetail>,
+    attr: (_: DeckCardPowerDetail) => number
   ): number {
     return cardDetails.reduce((v, cardDetail) =>
       v + attr(getOrThrow(cardPower, cardDetail.cardId)),
@@ -138,7 +171,8 @@ export class DeckCalculator {
   public async getDeckDetail (
     deckCards: UserCard[], allCards: UserCard[], eventConfig?: EventConfig, areaItemLevels?: AreaItemLevel[]
   ): Promise<DeckDetail> {
-    const allCards0 = await this.cardCalculator.batchGetCardDetail(allCards, {}, eventConfig, areaItemLevels)
+    const allCards0 =
+        await this.cardCalculator.batchGetCardDetail(allCards, {}, eventConfig, areaItemLevels)
     return await this.getDeckDetailByCards(
       await this.cardCalculator.batchGetCardDetail(deckCards, {}, eventConfig, areaItemLevels),
       allCards0, await this.getHonorBonusPower(), eventConfig?.eventType)
@@ -182,6 +216,9 @@ export interface DeckCardPowerDetail {
 }
 
 export interface DeckCardSkillDetail {
+  /**
+   * 最终计算出的卡组加分
+   */
   scoreUp: number
   lifeRecovery: number
 }

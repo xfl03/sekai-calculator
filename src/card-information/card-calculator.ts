@@ -2,13 +2,13 @@ import { type DataProvider } from '../data-provider/data-provider'
 import { type Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
 import { CardPowerCalculator } from './card-power-calculator'
-import { CardSkillCalculator } from './card-skill-calculator'
+import { CardSkillCalculator, type DeckCardSkillDetailPrepare } from './card-skill-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type AreaItemLevel } from '../master-data/area-item-level'
 import { type CardDetailMap } from './card-detail-map'
 import { CardEventCalculator } from '../event-point/card-event-calculator'
 import { AreaItemService } from '../area-item-information/area-item-service'
-import { type DeckCardPowerDetail, type DeckCardSkillDetail } from '../deck-information/deck-calculator'
+import { type DeckCardPowerDetail } from '../deck-information/deck-calculator'
 import { type EventConfig } from '../event-point/event-service'
 import { CardBloomEventCalculator } from '../event-point/card-bloom-event-calculator'
 import { CardService } from './card-service'
@@ -144,7 +144,7 @@ export interface CardDetail {
   units: string[]
   attr: string
   power: CardDetailMap<DeckCardPowerDetail>
-  skill: CardDetailMap<DeckCardSkillDetail>
+  skill: CardDetailMap<DeckCardSkillDetailPrepare>
   eventBonus?: number
   supportDeckBonus?: number
   hasCanvasBonus: boolean
