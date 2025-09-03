@@ -16,6 +16,7 @@ export * from './deck-information/deck-calculator'
 export * from './event-point/card-event-calculator'
 export * from './event-point/event-calculator'
 export * from './live-score/live-calculator'
+export * from './live-score/live-exact-calculator'
 
 // Recommend
 export * from './area-item-recommend/area-item-recommend'

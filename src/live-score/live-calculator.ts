@@ -146,15 +146,24 @@ export class LiveCalculator {
     const rate = baseRate + skills.details
       .reduce((v, it, i) => v + it.scoreUp * skillRate[i] / 100, 0)
     const life = skills.details.reduce((v, it) => v + it.lifeRecovery, 0)
-    // 活跃加分
+    // 活跃加分（按5次计算）
     const powerSum = multiPowerSum === 0 ? 5 * deckDetail.power.total : multiPowerSum
-    const activeBonus = liveType === LiveType.MULTI ? 5 * 0.015 * powerSum : 0
+    const activeBonus = liveType === LiveType.MULTI ? 5 * LiveCalculator.getMultiActiveBonus(powerSum) : 0
     return {
       score: Math.floor(rate * deckDetail.power.total * 4 + activeBonus),
       time: musicMeta.music_time,
       life: Math.min(2000, life + 1000),
       tap: musicMeta.tap_count
     }
+  }
+
+  /**
+   * 多人Live活跃加分（单次），1.5%的总综合力
+   * 最多可以发动5次
+   * @param powerSum 5个人的总综合
+   */
+  public static getMultiActiveBonus (powerSum: number): number {
+    return 0.015 * powerSum
   }
 
   /**
