@@ -9,7 +9,7 @@ import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
 import { containsAny, swap } from '../util/collection-util'
 import { filterCardPriority } from '../card-priority/card-priority-filter'
-import { toRecommendDeck, updateDeck } from './deck-result-update'
+import { checkWorldBloomDeck, toRecommendDeck, updateDeck } from './deck-result-update'
 import { AreaItemService } from '../area-item-information/area-item-service'
 import { type EventConfig, EventType } from '../event-point/event-service'
 
@@ -107,8 +107,8 @@ export class BaseDeckRecommend {
       if (deckCards.length >= 1 && card.attr !== deckCards[0].attr && !containsAny(deckCards[0].units, card.units)) {
         continue
       }
-      // 为了优化性能，如果是World Link活动，强制5色
-      if (eventConfig.worldBloomDifferentAttributeBonuses !== undefined && deckCards.some(it => it.attr === card.attr)) {
+      // 为了优化性能，如果是World Link活动，强制3色及以上
+      if (eventConfig.worldBloomDifferentAttributeBonuses !== undefined && checkWorldBloomDeck(deckCards, card)) {
         continue
       }
       // 要求生成的卡组后面4个位置按强弱排序、同强度按卡牌ID排序
