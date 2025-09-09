@@ -47,7 +47,7 @@ function checkAttrForBloomDfs (
 
 /**
  * 为世界开花活动检查是否可以组出5种属性的队伍
- * @param attrMap
+ * @param attrMap key为属性，value为角色
  */
 function checkAttrForBloom (attrMap: Map<string, Set<number>>): boolean {
   // 满足不了5色的肯定不行
@@ -61,6 +61,7 @@ function checkAttrForBloom (attrMap: Map<string, Set<number>>): boolean {
 
   // 使用二分图最大匹配算法，左半边为5种属性、右半边为26位角色
   // 复杂度O(nm)约等于130
+  // 可参考：https://oi-wiki.org/graph/graph-matching/bigraph-match/
   const attrs = new Map<string, number>()
   const chars = new Map<number, string>()
   const visit = new Map<string, number>()
@@ -70,7 +71,9 @@ function checkAttrForBloom (attrMap: Map<string, Set<number>>): boolean {
     round++
     let count = 0
     for (const attr of attrMap.keys()) {
-      if (!visit.has(attr) && checkAttrForBloomDfs(attrMap, attrs, chars, visit, round, attr)) count++
+      if (!visit.has(attr) && checkAttrForBloomDfs(attrMap, attrs, chars, visit, round, attr)) {
+        count++
+      }
     }
     if (count === 0) break
     ans += count
@@ -123,12 +126,11 @@ function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: Car
       }
       return false
     case EventType.BLOOM:
-      // 对于世界开花活动，必须要满足能组出5种属性的队伍，且能组出一个团队
-      if (!checkAttrForBloom(attrMap)) return false
-      // 需要组出至少一个团队
+      // 对于世界开花活动，必须要满足能组出一个团队，且能组出5种属性的队伍
       for (const v of unitMap.values()) {
         if (v.size >= 5) return true
       }
+      if (!checkAttrForBloom(attrMap)) return false
       return false
     default:
       // 未知活动类型，只能先认为无论如何都组不出合理队伍，要求全卡计算
@@ -149,7 +151,7 @@ export function filterCardPriority (
 ): CardDetail[] {
   const cardPriorities = getCardPriorities(liveType, eventType)
   let cards: CardDetail[] = []
-  let latestPriority = -114514
+  let latestPriority = Number.MIN_SAFE_INTEGER
   const cardIds = new Set<number>()
   for (const cardPriority of cardPriorities) {
     // 检查是否已经是符合优先级条件的完整卡组
@@ -164,7 +166,7 @@ export function filterCardPriority (
       .filter(it => !cardIds.has(it.cardId) &&
         it.cardRarityType === cardPriority.cardRarityType &&
         it.masterRank >= cardPriority.masterRank &&
-        (it.eventBonus === undefined || it.eventBonus >= cardPriority.eventBonus))
+        (it.eventBonus === undefined || it.eventBonus.getMaxBonus() >= cardPriority.eventBonus))
     filtered.forEach(it => cardIds.add(it.cardId))
     cards = [...cards, ...filtered]
   }

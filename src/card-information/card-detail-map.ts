@@ -1,10 +1,11 @@
 /**
- * 用于记录在不同的同组合、同属性加成的情况下的综合力或加分技能
+ * 用于记录在不同的组合、属性情况下的值
+ * 每种不同的值存储逻辑不同，有单独实现类
  */
 export class CardDetailMap<T> {
-  public min = Number.MAX_SAFE_INTEGER
-  public max = Number.MIN_SAFE_INTEGER
-  public values = new Map<string, T>()
+  private min = Number.MAX_SAFE_INTEGER
+  private max = Number.MIN_SAFE_INTEGER
+  private readonly values = new Map<string, T>()
 
   /**
    * 设定给定情况下的值
@@ -15,48 +16,21 @@ export class CardDetailMap<T> {
    * @param cmpValue 用于设置最小值、最大值的可比较值
    * @param value 设定的值
    */
-  public set (unit: string, unitMember: number, attrMember: number, cmpValue: number, value: T): void {
+  protected set (unit: string, unitMember: number, attrMember: number, cmpValue: number, value: T): void {
     this.updateMinMax(cmpValue)
     this.values.set(CardDetailMap.getKey(unit, unitMember, attrMember), value)
-  }
-
-  /**
-   * 获取给定情况下的值
-   * 会返回最合适的值，如果给定的条件与卡牌完全不符会给出异常
-   * @param unit 特定卡牌组合（虚拟歌手卡牌可能存在两个组合）
-   * @param unitMember 该组合对应的人数（真实值）
-   * @param attrMember 卡牌属性对应的人数（真实值）
-   */
-  public get (unit: string, unitMember: number, attrMember: number): T {
-    // 因为实际上的attrMember取值只能是5和1，直接优化掉
-    const attrMember0 = attrMember === 5 ? 5 : 1
-    let best = this.getInternal(unit, unitMember, attrMember0)
-    if (best !== undefined) return best
-    // 有可能unitMember在混组的时候优化成1了
-    best = this.getInternal(unit, unitMember === 5 ? 5 : 1, attrMember0)
-    if (best !== undefined) return best
-    // 有可能是混组技能，被优化成了1或2
-    if (unit === 'diff') {
-      best = this.getInternal('diff', Math.min(2, unitMember), 1)
-      if (best !== undefined) return best
-    }
-    // 有可能因为技能是固定数值，attrMember、unitMember都优化成1了，组合直接为any
-    best = this.getInternal('any', 1, 1)
-    if (best !== undefined) return best
-    // 如果这还找不到，说明给的情况就不对
-    throw new Error('case not found')
   }
 
   /**
    * 更新最大最小值（不在values中存储值本身）
    * @param cmpValue 用于比较的值
    */
-  private updateMinMax (cmpValue: number): void {
+  protected updateMinMax (cmpValue: number): void {
     this.min = Math.min(this.min, cmpValue)
     this.max = Math.max(this.max, cmpValue)
   }
 
-  private getInternal (unit: string, unitMember: number, attrMember: number): T | undefined {
+  protected getInternal (unit: string, unitMember: number, attrMember: number): T | undefined {
     return this.values.get(CardDetailMap.getKey(unit, unitMember, attrMember))
   }
 
@@ -67,7 +41,7 @@ export class CardDetailMap<T> {
    * @param attrMember 属性人数
    * @private
    */
-  public static getKey (unit: string, unitMember: number, attrMember: number): string {
+  protected static getKey (unit: string, unitMember: number, attrMember: number): string {
     return `${unit}-${unitMember}-${attrMember}`
   }
 

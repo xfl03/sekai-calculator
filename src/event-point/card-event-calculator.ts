@@ -6,6 +6,9 @@ import { findOrThrow } from '../util/collection-util'
 import { type UserCard } from '../user-data/user-card'
 import { type EventCard } from '../master-data/event-card'
 import { type EventRarityBonusRate } from '../master-data/event-rarity-bonus-rate'
+import { CardDetailMapEventBonus } from '../card-information/card-detail-map-event-bonus'
+import type { UserHonor } from '../user-data/user-honor'
+import { type EventHonorBonus } from '../master-data/event-honor-bonus'
 
 export class CardEventCalculator {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -48,28 +51,77 @@ export class CardEventCalculator {
    * @param userCard 用户卡牌
    * @param eventId 活动ID
    */
-  public async getCardEventBonus (userCard: UserCard, eventId: number): Promise<number> {
+  public async getCardEventBonus (userCard: UserCard, eventId: number): Promise<CardDetailMapEventBonus> {
     const cards = await this.dataProvider.getMasterData<Card>('cards')
     const eventCards = await this.dataProvider.getMasterData<EventCard>('eventCards')
     const eventRarityBonusRates = await this.dataProvider.getMasterData<EventRarityBonusRate>('eventRarityBonusRates')
 
     // 计算角色、属性加成
-    let eventBonus = 0
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
-    eventBonus += await this.getEventDeckBonus(eventId, card)
-
-    // 计算当期卡牌加成
-    const cardBonus = eventCards.find((it: any) => it.eventId === eventId && it.cardId === card.id)
-    if (cardBonus != null) {
-      eventBonus += cardBonus.bonusRate
-    }
+    let fixedBonus = await this.getEventDeckBonus(eventId, card)
 
     // 计算突破等级加成
     const masterRankBonus = findOrThrow(eventRarityBonusRates,
       it => it.cardRarityType === card.cardRarityType && it.masterRank === userCard.masterRank)
-    eventBonus += masterRankBonus.bonusRate
+    fixedBonus += masterRankBonus.bonusRate
 
-    // 实际使用的时候还得/100
-    return eventBonus
+    // 计算指定卡牌（正常是当期四星，World Link Finale为当年组合限定四星）加成
+    // 为了给World Link Finale做指定卡牌加成上限，要单独加进返回结构，不能简单加算
+    const cardBonus0 = eventCards
+      .find((it: any) => it.eventId === eventId && it.cardId === card.id)
+    const cardBonus = cardBonus0?.bonusRate ?? 0
+
+    // 处理World Link Finale的Leader活动排名称号加成（因为和Leader位相关，要单独加进返回结构，不能简单加算）
+    const leaderBonus = await this.getCardLeaderBonus(eventId, card.characterId)
+
+    // 与卡组相关的内容要单独加进返回结构，不能简单加算
+    const bonus = new CardDetailMapEventBonus()
+    bonus.setBonus({
+      fixedBonus,
+      cardBonus,
+      leaderBonus
+    })
+    return bonus
   }
+
+  /**
+   * 获得Leader称号加成（World Link Finale）
+   * @param eventId
+   * @param characterId
+   * @private
+   */
+  private async getCardLeaderBonus (eventId: number, characterId: number): Promise<number> {
+    const eventHonorBonuses = await
+    this.dataProvider.getMasterData<EventHonorBonus>('eventHonorBonuses')
+    const bonus = eventHonorBonuses
+      .find(it => it.eventId === eventId && it.leaderGameCharacterId === characterId)
+    // 如果没有加成直接返回
+    if (bonus === undefined) {
+      return 0
+    }
+    // 检查用户是否有特定称号
+    const userHonors = await this.dataProvider.getUserData<UserHonor[]>('userHonors')
+    if (userHonors.some(it => it.honorId === bonus.honorId)) {
+      return bonus.bonusRate
+    }
+    return 0
+  }
+}
+
+export interface CardEventBonusDetail {
+  /**
+   * 固定的加成，与卡组无关
+   * 百分比，实际使用的时候还得/100
+   */
+  fixedBonus: number
+  /**
+   * 特定卡牌加成（正常是当期四星，World Link Finale为当年组合限定四星且有加成上限）
+   * 百分比，实际使用的时候还得/100
+   */
+  cardBonus: number
+  /**
+   * World Link Finale的Leader活动排名称号加成（和Leader位相关）
+   * 百分比，实际使用的时候还得/100
+   */
+  leaderBonus: number
 }

@@ -3,6 +3,12 @@ import { type Event } from '../master-data/event'
 import { findOrThrow } from '../util/collection-util'
 import { type EventDeckBonus } from '../master-data/event-deck-bonus'
 import { type GameCharacterUnit } from '../master-data/game-character-unit'
+import type { WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
+import { type EventCardBonusLimit } from '../master-data/event-card-bonus-limit'
+import type { EventSkillScoreUpLimit } from '../master-data/event-skill-score-up-limit'
+import {
+  type EventMysekaiFixtureGameCharacterPerformanceBonusLimit
+} from '../master-data/event-mysekai-fixture-game-character-performance-bonus-limit'
 
 export class EventService {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -30,14 +36,20 @@ export class EventService {
   /**
    * 获取活动设置
    * @param eventId 活动ID
-   * @param specialCharacterId 特别选择的角色ID（用于）
+   * @param specialCharacterId 特别选择的角色ID（用于World Link活动）
    */
   public async getEventConfig (eventId: number, specialCharacterId?: number): Promise<EventConfig> {
+    const eventType = await this.getEventType(eventId)
     return {
       eventId,
-      eventType: await this.getEventType(eventId),
+      eventType,
       eventUnit: await this.getEventBonusUnit(eventId),
-      specialCharacterId
+      specialCharacterId,
+      cardBonusCountLimit: await this.getEventCardBonusCountLimit(eventId),
+      skillScoreUpLimit: await this.getEventSkillScoreUpLimit(eventId),
+      mysekaiFixtureLimit: await this.getMysekaiFixtureLimit(eventId),
+      worldBloomDifferentAttributeBonuses:
+          eventType === EventType.BLOOM ? await this.getWorldBloomDifferentAttributeBonuses() : undefined
     }
   }
 
@@ -60,6 +72,48 @@ export class EventService {
     if (set.size !== 1) return undefined
     return Array.from(set)[0]
   }
+
+  /**
+   * 获得World Link活动不同属性加成
+   */
+  public async getWorldBloomDifferentAttributeBonuses (): Promise<WorldBloomDifferentAttributeBonus[]> {
+    return await this.dataProvider
+      .getMasterData<WorldBloomDifferentAttributeBonus>('worldBloomDifferentAttributeBonuses')
+  }
+
+  /**
+   * 获得特定卡牌加成数量限制（用于World Link Finale）
+   */
+  public async getEventCardBonusCountLimit (eventId: number): Promise<number> {
+    const limits = await this.dataProvider
+      .getMasterData<EventCardBonusLimit>('eventCardBonusLimits')
+    const limit = limits.find(it => it.id === eventId)
+    return limit?.memberCountLimit ?? 5 // 默认全加成
+  }
+
+  /**
+   * 获得World Link Finale卡牌技能限制
+   * @param eventId
+   */
+  public async getEventSkillScoreUpLimit (eventId: number): Promise<number> {
+    const limits =
+        await this.dataProvider.getMasterData<EventSkillScoreUpLimit>('eventSkillScoreUpLimits')
+    const limit =
+        limits.find(it => it.eventId === eventId)
+    return limit?.scoreUpRateLimit ?? Number.MAX_SAFE_INTEGER
+  }
+
+  /**
+   * 获得World Link Finale My SEKAI家具加成限制
+   * @param eventId
+   */
+  public async getMysekaiFixtureLimit (eventId: number): Promise<number> {
+    const limits =
+        await this.dataProvider.getMasterData<EventMysekaiFixtureGameCharacterPerformanceBonusLimit>('eventMysekaiFixtureGameCharacterPerformanceBonusLimits')
+    const limit =
+        limits.find(it => it.eventId === eventId)
+    return limit?.bonusRateLimit ?? Number.MAX_SAFE_INTEGER
+  }
 }
 
 /**
@@ -76,14 +130,36 @@ export enum EventType {
  * 活动信息设置
  */
 export interface EventConfig {
+  /**
+   * 活动ID
+   */
   eventId?: number
+  /**
+   * 活动类型
+   */
   eventType?: EventType
   /**
    * 箱活的团队
    */
   eventUnit?: string
   /**
-   * 特殊角色ID，用于世界开花活动
+   * 特殊角色ID（用于World Link活动）
    */
   specialCharacterId?: number
+  /**
+   * 特定卡牌加成数量限制（用于World Link Finale）
+   */
+  cardBonusCountLimit?: number
+  /**
+   * 加分技能限制（用于World Link Finale）
+   */
+  skillScoreUpLimit?: number
+  /**
+   * My SEKAI家具加成限制（用于World Link Finale）
+   */
+  mysekaiFixtureLimit?: number
+  /**
+   * 不同属性加成（用于World Link活动）
+   */
+  worldBloomDifferentAttributeBonuses?: WorldBloomDifferentAttributeBonus[]
 }

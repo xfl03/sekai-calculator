@@ -1,4 +1,5 @@
 import { type RecommendDeck } from './base-deck-recommend'
+import type { DeckDetail } from '../deck-information/deck-calculator'
 
 /**
  * 按分数倒序、综合倒序、C位CardID正序的顺序排序推荐卡组
@@ -46,4 +47,16 @@ export function updateDeck (pre: RecommendDeck[], result: RecommendDeck[], limit
   // 限制答案数量
   if (ans.length > limit) ans = ans.slice(0, limit)
   return ans
+}
+
+/**
+ * 转换返回值
+ * @param deckDetail 卡组详情
+ * @param score 分数
+ * @private
+ */
+export function toRecommendDeck (deckDetail: DeckDetail, score: number): RecommendDeck[] {
+  const ret = deckDetail as RecommendDeck
+  ret.score = score
+  return [ret]
 }

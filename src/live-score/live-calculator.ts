@@ -40,7 +40,7 @@ export class LiveCalculator {
         return musicMeta.base_score
       case LiveType.MULTI:
       case LiveType.CHEERFUL:
-        return musicMeta.base_score + musicMeta.fever_score
+        return musicMeta.base_score + musicMeta.fever_score * 0.5 // Fever加成50%
       case LiveType.AUTO:
         return musicMeta.base_score_auto
     }

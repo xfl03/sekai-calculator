@@ -5,17 +5,21 @@ import { type CardDetail } from '../card-information/card-calculator'
 import { LiveCalculator, LiveType } from '../live-score/live-calculator'
 import { type MusicMeta } from '../common/music-meta'
 import { type ScoreFunction } from '../deck-recommend/base-deck-recommend'
-import { EventType } from './event-service'
+import { EventService, EventType } from './event-service'
 import { type DeckDetail } from '../deck-information/deck-calculator'
 import { safeNumber } from '../util/number-util'
 import { type WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
 import { findOrThrow } from '../util/collection-util'
+import type { CardDetailMapEventBonus } from '../card-information/card-detail-map-event-bonus'
+import { type Card } from '../master-data/card'
 
 export class EventCalculator {
   private readonly cardEventCalculator: CardEventCalculator
+  private readonly eventService: EventService
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.cardEventCalculator = new CardEventCalculator(dataProvider)
+    this.eventService = new EventService(dataProvider)
   }
 
   /**
@@ -24,8 +28,19 @@ export class EventCalculator {
    * @param eventId 活动ID
    */
   public async getDeckEventBonus (deckCards: UserCard[], eventId: number): Promise<number> {
-    return await deckCards.reduce(async (v, it) =>
-      await v + await this.cardEventCalculator.getCardEventBonus(it, eventId), Promise.resolve(0))
+    const masterCards = await this.dataProvider.getMasterData<Card>('cards')
+    const cardDetails = await Promise.all(deckCards
+      .map(async userCard => {
+        const card = findOrThrow(masterCards, it => it.id === userCard.cardId)
+        const eventBonus = await this.cardEventCalculator.getCardEventBonus(userCard, eventId)
+        return {
+          attr: card.attr,
+          eventBonus
+        }
+      }))
+    const event = await this.eventService.getEventConfig(eventId)
+    return EventCalculator.getDeckBonus(
+      cardDetails, event.cardBonusCountLimit, event.worldBloomDifferentAttributeBonuses) ?? 0
   }
 
   /**
@@ -73,19 +88,36 @@ export class EventCalculator {
   /**
    * 获取卡组活动加成
    * @param deckCards 卡组
-   * @param eventType （可选）活动类型
+   * @param cardBonusCountLimit 特定卡牌加成数量限制（用于World Link Finale）
+   * @param worldBloomDifferentAttributeBonuses （可选）World Link不同属性加成
    */
-  public async getDeckBonus (deckCards: CardDetail[], eventType: EventType = EventType.NONE): Promise<number | undefined> {
-    // 如果没有预处理好活动加成，则返回空
-    for (const card of deckCards) {
+  public static getDeckBonus (
+    deckCards: Array<{ attr: string, eventBonus?: CardDetailMapEventBonus }>, cardBonusCountLimit: number = 5,
+    worldBloomDifferentAttributeBonuses?: WorldBloomDifferentAttributeBonus[]
+  ): number | undefined {
+    let bonus = 0
+    let cardBonusCount = 0
+    for (let i = 0; i < deckCards.length; i++) {
+      const card = deckCards[i]
+      // 如果没有预处理好活动加成，则返回空
       if (card.eventBonus === undefined) return undefined
+      const bonusDetail = card.eventBonus.getBonus()
+      // 固定加成无论如何都要
+      bonus += bonusDetail.fixedBonus
+      // 特定卡牌计算
+      // 处理World Link Finale的卡牌加成上限（4张）
+      if (cardBonusCount < cardBonusCountLimit) {
+        bonus += bonusDetail.cardBonus
+        cardBonusCount++
+      }
+      // World Link Finale的Leader称号加成
+      if (i === 0) {
+        bonus += bonusDetail.leaderBonus
+      }
     }
-    const bonus = deckCards.reduce((v, it) => v + (it.eventBonus === undefined ? 0 : it.eventBonus), 0)
-    if (eventType !== EventType.BLOOM) return bonus
 
-    // 如果是世界开花活动，还需要计算卡组的异色加成
-    const worldBloomDifferentAttributeBonuses =
-      await this.dataProvider.getMasterData<WorldBloomDifferentAttributeBonus>('worldBloomDifferentAttributeBonuses')
+    // 如果是World Link活动，还需要计算卡组的异色加成
+    if (worldBloomDifferentAttributeBonuses === undefined) return bonus
     const set = new Set<string>()
     deckCards.forEach(it => set.add(it.attr))
     return bonus + findOrThrow(worldBloomDifferentAttributeBonuses,
@@ -93,26 +125,27 @@ export class EventCalculator {
   }
 
   /**
-   * 获取支援卡组加成
-   * @param deckCards 卡组
-   * @param allCards 所有卡牌（按支援卡组加成从大到小排序）
+   * 获取支援队伍加成
+   * @param deckCards 队伍
+   * @param allCards 所有卡牌（按支援加成从大到小排序）
    */
   public static getSupportDeckBonus (deckCards: Array<{ cardId: number }>, allCards: CardDetail[]): { bonus: number, cards: CardDetail[] } {
+    // 当前主队伍的卡牌信息
+    const deckCardIds = new Set(deckCards.map(it => it.cardId))
     let bonus = 0
-    let count = 0
     const cards: CardDetail[] = []
-    // 如果没有预处理好支援卡组加成，则跳过
+    // 这种传统写法和filter reduce比起来，因为大概率提前跳出，能减少一点时间常数
     for (const card of allCards) {
+      // 如果没有预处理好支援队伍加成，则跳过
       if (card.supportDeckBonus === undefined) continue
-      // 支援卡组的卡不能和主队伍重复，需要排除掉
-      if (deckCards.find(it => it.cardId === card.cardId) !== undefined) continue
+      // 支援队伍的卡不能和主队伍重复，需要排除掉
+      if (deckCardIds.has(card.cardId)) continue
       bonus += card.supportDeckBonus
-      count++
       cards.push(card)
-      // 4.5周年之后，支援卡组为20张卡
-      if (count >= 20) return { bonus, cards }
+      // 4.5周年之后，支援队伍为20张卡
+      if (cards.length >= 20) break
     }
-    // 就算组不出完整的支援卡组也得返回
+    // 组满支援队伍或者用完所有卡，就返回
     return { bonus, cards }
   }
 

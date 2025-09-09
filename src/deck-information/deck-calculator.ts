@@ -6,7 +6,8 @@ import { CardCalculator, type CardDetail } from '../card-information/card-calcul
 import { computeWithDefault, findOrThrow, getOrThrow } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
 import { type AreaItemLevel } from '../master-data/area-item-level'
-import { type EventConfig, type EventType } from '../event-point/event-service'
+import { type EventConfig } from '../event-point/event-service'
+import type { WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
 
 export class DeckCalculator {
   private readonly cardCalculator: CardCalculator
@@ -36,11 +37,13 @@ export class DeckCalculator {
    * @param cardDetails 处理好的卡牌详情（数组长度1-5，兼容挑战Live）
    * @param allCards 参与计算的所有卡，按支援队伍加成从大到小排序
    * @param honorBonus 称号加成
-   * @param eventType 活动类型（用于算加成）
+   * @param cardBonusCountLimit 特定卡牌加成数量限制（用于World Link Finale）
+   * @param worldBloomDifferentAttributeBonuses （可选）World Link不同属性加成
    */
-  public async getDeckDetailByCards (
-    cardDetails: CardDetail[], allCards: CardDetail[], honorBonus: number, eventType?: EventType
-  ): Promise<DeckDetail> {
+  public static getDeckDetailByCards (
+    cardDetails: CardDetail[], allCards: CardDetail[], honorBonus: number, cardBonusCountLimit?: number,
+    worldBloomDifferentAttributeBonuses?: WorldBloomDifferentAttributeBonus[]
+  ): DeckDetail {
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
     const map = new Map<string, number>()
     for (const cardDetail of cardDetails) {
@@ -56,12 +59,12 @@ export class DeckCalculator {
       cardPower.set(cardDetail.cardId,
         cardDetail.units.reduce((vv, unit) => {
           const current =
-            cardDetail.power.get(unit, getOrThrow(map, unit), getOrThrow(map, cardDetail.attr))
+            cardDetail.power.getPower(unit, getOrThrow(map, unit), getOrThrow(map, cardDetail.attr))
           // 有多个组合时，取最高加成组合
           return current.total > vv.total ? current : vv
         },
-        // 随便取一个当默认值
-        cardDetail.power.get(cardDetail.units[0],
+        // 随便取一个当默认值，不会影响结果
+        cardDetail.power.getPower(cardDetail.units[0],
           getOrThrow(map, cardDetail.units[0]), getOrThrow(map, cardDetail.attr))
         ))
     })
@@ -92,11 +95,12 @@ export class DeckCalculator {
       const skillPrepare =
           cardDetail.units.reduce((vv, unit) => {
             // 有多个组合时，取最高组合
-            const current = cardDetail.skill.get(unit, getOrThrow(map, unit), 1)
+            const current = cardDetail.skill.getSkill(unit, getOrThrow(map, unit))
             return current.scoreUpFixed > vv.scoreUpFixed ? current : vv
           },
           // 取新FES V家觉醒前的异组合为默认值
-          cardDetail.skill.get('diff', map.size - 1, 1))
+          // 会自动回落到固定值的默认技能
+          cardDetail.skill.getSkill('diff', map.size - 1))
       return {
         cardDetail,
         skillPrepare
@@ -104,7 +108,7 @@ export class DeckCalculator {
     })
 
     // 预备完技能效果后，再计算吸技能
-    const cards = cardsPrepare.map(it => {
+    const cards = cardsPrepare.map((it, i) => {
       const { cardDetail, skillPrepare } = it
       let scoreUp = skillPrepare.scoreUpFixed
       // 针对吸技能的情况特殊计算
@@ -126,7 +130,7 @@ export class DeckCalculator {
         skillLevel: cardDetail.skillLevel,
         masterRank: cardDetail.masterRank,
         power: getOrThrow(cardPower, cardDetail.cardId),
-        eventBonus: cardDetail.eventBonus,
+        eventBonus: cardDetail.eventBonus?.getBonusForDisplay(i === 0),
         skill: {
           scoreUp,
           lifeRecovery: skillPrepare.lifeRecovery
@@ -135,8 +139,13 @@ export class DeckCalculator {
     })
 
     // 计算卡组活动加成
-    const eventBonus = await this.eventCalculator.getDeckBonus(cardDetails, eventType)
-    const supportDeckBonus = EventCalculator.getSupportDeckBonus(cardDetails, allCards).bonus
+    const eventBonus = EventCalculator.getDeckBonus(
+      cardDetails, cardBonusCountLimit, worldBloomDifferentAttributeBonuses)
+    // World Link活动还有支援卡组加成
+    const supportDeckBonus =
+        worldBloomDifferentAttributeBonuses !== undefined
+          ? EventCalculator.getSupportDeckBonus(cardDetails, allCards).bonus
+          : 0
     return {
       power,
       eventBonus,
@@ -173,9 +182,10 @@ export class DeckCalculator {
   ): Promise<DeckDetail> {
     const allCards0 =
         await this.cardCalculator.batchGetCardDetail(allCards, {}, eventConfig, areaItemLevels)
-    return await this.getDeckDetailByCards(
+
+    return DeckCalculator.getDeckDetailByCards(
       await this.cardCalculator.batchGetCardDetail(deckCards, {}, eventConfig, areaItemLevels),
-      allCards0, await this.getHonorBonusPower(), eventConfig?.eventType)
+      allCards0, await this.getHonorBonusPower(), eventConfig?.cardBonusCountLimit, eventConfig?.worldBloomDifferentAttributeBonuses)
   }
 }
 

@@ -2,18 +2,19 @@ import { type DataProvider } from '../data-provider/data-provider'
 import { type Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
 import { CardPowerCalculator } from './card-power-calculator'
-import { CardSkillCalculator, type DeckCardSkillDetailPrepare } from './card-skill-calculator'
+import { CardSkillCalculator } from './card-skill-calculator'
 import { type UserCard } from '../user-data/user-card'
 import { type AreaItemLevel } from '../master-data/area-item-level'
-import { type CardDetailMap } from './card-detail-map'
 import { CardEventCalculator } from '../event-point/card-event-calculator'
 import { AreaItemService } from '../area-item-information/area-item-service'
-import { type DeckCardPowerDetail } from '../deck-information/deck-calculator'
 import { type EventConfig } from '../event-point/event-service'
 import { CardBloomEventCalculator } from '../event-point/card-bloom-event-calculator'
 import { CardService } from './card-service'
 import { safeNumber } from '../util/number-util'
 import { type MysekaiGateBonus, MysekaiService } from '../mysekai-information/mysekai-service'
+import { type CardDetailMapPower } from './card-detail-map-power'
+import { type CardDetailMapSkill } from './card-detail-map-skill'
+import { type CardDetailMapEventBonus } from './card-detail-map-event-bonus'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
@@ -40,14 +41,18 @@ export class CardCalculator {
    * @param userAreaItemLevels 用户拥有的区域道具等级
    * @param config 卡牌设置
    * @param eventId 活动ID（如果非0则计算活动加成）
-   * @param specialCharacterId 指定的角色ID（如果有则计算世界开花活动支援卡组加成）
+   * @param specialCharacterId 指定的角色ID（用于World Finale活动支援卡组加成）
+   * @param scoreUpLimit 卡牌技能限制（用于World Link Finale）
+   * @param mysekaiFixtureLimit My SEKAI家具加成限制（用于World Link Finale）
    * @param hasCanvasBonus 是否拥有自定义世界中的画布
    * @param userGateBonuses 用户拥有的大门加成
    */
   public async getCardDetail (
     userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {}, {
       eventId = 0,
-      specialCharacterId = 0
+      specialCharacterId = 0,
+      skillScoreUpLimit = Number.MAX_SAFE_INTEGER,
+      mysekaiFixtureLimit = Number.MAX_SAFE_INTEGER
     }: EventConfig = {}, hasCanvasBonus: boolean, userGateBonuses: MysekaiGateBonus[]
   ): Promise<CardDetail | undefined> {
     const cards = await this.dataProvider.getMasterData<Card>('cards')
@@ -59,10 +64,10 @@ export class CardCalculator {
     const userCard0 = await this.cardService.applyCardConfig(userCard, card, config0)
 
     const units = await this.cardService.getCardUnits(card)
-    const skill = await this.skillCalculator.getCardSkill(userCard0, card)
+    const skill = await this.skillCalculator.getCardSkill(userCard0, card, skillScoreUpLimit)
     const power =
       await this.powerCalculator.getCardPower(
-        userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses)
+        userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses, mysekaiFixtureLimit)
     const eventBonus = eventId === 0
       ? undefined
       : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
@@ -108,7 +113,7 @@ export class CardCalculator {
         await this.getCardDetail(it, areaItemLevels0, config, eventConfig, userCanvasBonusCards.has(it.cardId),
           userGateBonuses))
     ).then(it => it.filter(it => it !== undefined)) as CardDetail[]
-    // 如果是给世界开花活动算的话，allCards一定要按支援加成从大到小排序
+    // 如果是给World Link活动算的话，allCards一定要按支援加成从大到小排序
     if (eventConfig?.specialCharacterId !== undefined && eventConfig.specialCharacterId > 0) {
       return ret.sort((a, b) =>
         safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
@@ -127,7 +132,7 @@ export class CardCalculator {
     return cardDetail0.power.isCertainlyLessThen(cardDetail1.power) &&
       cardDetail0.skill.isCertainlyLessThen(cardDetail1.skill) &&
       (cardDetail0.eventBonus === undefined || cardDetail1.eventBonus === undefined ||
-        cardDetail0.eventBonus <= cardDetail1.eventBonus)
+        cardDetail0.eventBonus.isCertainlyLessThen(cardDetail1.eventBonus))
   }
 }
 
@@ -143,9 +148,9 @@ export interface CardDetail {
   characterId: number
   units: string[]
   attr: string
-  power: CardDetailMap<DeckCardPowerDetail>
-  skill: CardDetailMap<DeckCardSkillDetailPrepare>
-  eventBonus?: number
+  power: CardDetailMapPower
+  skill: CardDetailMapSkill
+  eventBonus?: CardDetailMapEventBonus
   supportDeckBonus?: number
   hasCanvasBonus: boolean
 }

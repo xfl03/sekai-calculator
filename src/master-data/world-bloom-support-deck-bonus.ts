@@ -2,8 +2,8 @@ export interface WorldBloomSupportDeckBonus {
   cardRarityType: string
   worldBloomSupportDeckCharacterBonuses: Array<{
     id: number
-    worldBloomSupportDeckCharacterType: string
-    bonusRate: number
+    worldBloomSupportDeckCharacterType: string // undefined, specific, others
+    bonusRate: number // float
   }>
   worldBloomSupportDeckMasterRankBonuses: Array<{
     id: number

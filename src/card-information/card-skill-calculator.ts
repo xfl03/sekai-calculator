@@ -3,8 +3,8 @@ import { type UserCard } from '../user-data/user-card'
 import { type Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
 import { type Skill } from '../master-data/skill'
-import { CardDetailMap } from './card-detail-map'
 import type { UserCharacter } from '../user-data/user-character'
+import { CardDetailMapSkill } from './card-detail-map-skill'
 
 export class CardSkillCalculator {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -14,25 +14,29 @@ export class CardSkillCalculator {
    * 获得不同情况下的卡牌技能
    * @param userCard 用户卡牌
    * @param card 卡牌
+   * @param scoreUpLimit World Link Finale卡牌技能限制
    */
-  public async getCardSkill (userCard: UserCard, card: Card):
-  Promise<CardDetailMap<DeckCardSkillDetailPrepare>> {
-    const skillMap = new CardDetailMap<DeckCardSkillDetailPrepare>()
+  public async getCardSkill (
+    userCard: UserCard, card: Card, scoreUpLimit: number = Number.MAX_SAFE_INTEGER
+  ): Promise<CardDetailMapSkill> {
+    const skillMap = new CardDetailMapSkill()
     const details = await this.getSkillDetails(userCard, card)
-    // 获得最大基础加成，用于FES卡排除觉醒前的一些无意义情况
-    const maxScoreUpBasic = details
+    // 获得最大基础加成，用于Bloom FES卡排除觉醒前的一些无意义情况
+    let maxScoreUpBasic = details
       .reduce((v, it) =>
         Math.max(v, CardSkillCalculator.getScoreUpSelfFixed(it)), 0)
+    maxScoreUpBasic = Math.min(maxScoreUpBasic, scoreUpLimit) // 强制封顶
     const maxLife = details
       .reduce((v, it) => Math.max(v, it.lifeRecovery), 0)
-    // 用最大基础加成作为卡牌基础加成参与比较（认为是技能效果最小值）
-    skillMap.set('any', 1, 1, maxScoreUpBasic, {
+    // 用最大基础加成作为卡牌基础加成参与比较（认为是技能效果最小值，用于回落技能）
+    skillMap.setFixedSkill({
       scoreUpFixed: maxScoreUpBasic,
       scoreUpToReference: maxScoreUpBasic,
       lifeRecovery: maxLife
     })
+    // 分别计算觉醒前后技能
     details.forEach(it => {
-      CardSkillCalculator.updateSkillDetailMap(skillMap, it, maxScoreUpBasic)
+      CardSkillCalculator.updateSkillDetailMap(skillMap, it, maxScoreUpBasic, scoreUpLimit)
     })
     return skillMap
   }
@@ -41,12 +45,13 @@ export class CardSkillCalculator {
    * 填补到卡牌技能详情
    * @param skillMap 卡牌技能详情
    * @param detail 单个技能细节
-   * @param maxScoreUpBasic
+   * @param maxScoreUpBasic 保底技能
+   * @param scoreUpLimit 最高技能限制
    * @private
    */
   private static updateSkillDetailMap (
-    skillMap: CardDetailMap<DeckCardSkillDetailPrepare>,
-    detail: SkillDetailInternal, maxScoreUpBasic: number
+    skillMap: CardDetailMapSkill,
+    detail: SkillDetailInternal, maxScoreUpBasic: number, scoreUpLimit: number
   ): void {
     // 当前技能固定加成
     const scoreUpSelfFixed = CardSkillCalculator.getScoreUpSelfFixed(detail)
@@ -55,21 +60,23 @@ export class CardSkillCalculator {
       // 组合相关，处理不同人数的情况
       for (let i = 1; i <= 5; ++i) {
         // 如果全部同队还有一次额外加成
-        const scoreUpFixed = scoreUpSelfFixed +
+        let scoreUpFixed = scoreUpSelfFixed +
             (i === 5 ? 5 : (i - 1)) * detail.scoreUpSameUnit.value
-        skillMap.set(detail.scoreUpSameUnit.unit, i, 1, scoreUpFixed, {
+        scoreUpFixed = Math.min(scoreUpFixed, scoreUpLimit) // 强制封顶
+        skillMap.setSameUnitSkill(detail.scoreUpSameUnit.unit, i, {
           scoreUpFixed,
           scoreUpToReference: scoreUpFixed,
           lifeRecovery: detail.lifeRecovery
         })
       }
     }
-    // 新FES 原创觉醒前
+    // Bloom FES 原创觉醒前：吸技能
     if (detail.scoreUpReference !== undefined) {
-      const maxValue = scoreUpSelfFixed + detail.scoreUpReference.max
+      let maxValue = scoreUpSelfFixed + detail.scoreUpReference.max
+      maxValue = Math.min(maxValue, scoreUpLimit) // 强制封顶
       if (maxValue > maxScoreUpBasic) {
         // 如果比基础加成强，把吸技能更新进基础加成（同时更新技能效果的最大值）
-        skillMap.set('any', 1, 1, maxValue, {
+        skillMap.setReferenceSkill({
           scoreUpFixed: maxScoreUpBasic,
           scoreUpToReference: maxValue, // 被吸技能时直接按最大值算
           scoreUpReference: {
@@ -81,13 +88,15 @@ export class CardSkillCalculator {
         })
       }
     }
-    // 新FES V家觉醒前
+    // Bloom FES V家觉醒前：不同组合数量影响技能
     if (detail.scoreUpDifferentUnit !== undefined) {
       for (const [key, value] of detail.scoreUpDifferentUnit) {
-        const current = scoreUpSelfFixed + value
-        if (scoreUpSelfFixed + value > maxScoreUpBasic) {
+        let current = scoreUpSelfFixed + value
+        current = Math.min(current, scoreUpSelfFixed) // 强制封顶
+        if (current > maxScoreUpBasic) {
           // 只有在高于觉醒后技能的情况下才考虑
-          skillMap.set('diff', key, 1, current, {
+          // 不然默认回落到觉醒后技能
+          skillMap.setDiffUnitSkill(key, {
             scoreUpFixed: current,
             scoreUpToReference: current,
             lifeRecovery: detail.lifeRecovery
@@ -103,11 +112,15 @@ export class CardSkillCalculator {
    * @param card 卡牌
    * @private
    */
-  private async getSkillDetails (userCard: UserCard, card: Card): Promise<SkillDetailInternal[]> {
+  private async getSkillDetails (
+    userCard: UserCard, card: Card
+  ): Promise<SkillDetailInternal[]> {
     const skills = await this.getSkills(userCard, card)
     // 新FES卡用的角色等级加成
     const characterRank = await this.getCharacterRank(card.characterId)
-    return skills.map(it => CardSkillCalculator.getSkillDetail(userCard, it, characterRank))
+
+    return skills.map(it =>
+      CardSkillCalculator.getSkillDetail(userCard, it, characterRank))
   }
 
   /**
@@ -120,7 +133,7 @@ export class CardSkillCalculator {
   private static getSkillDetail (
     userCard: UserCard, skill: Skill, characterRank: number
   ): SkillDetailInternal {
-    const ret: SkillDetailInternal = { scoreUpBasic: 0, scoreUpcharacterRank: 0, lifeRecovery: 0 }
+    const ret: SkillDetailInternal = { scoreUpBasic: 0, scoreUpCharacterRank: 0, lifeRecovery: 0 }
 
     for (const skillEffect of skill.skillEffects) {
       const skillEffectDetail = findOrThrow(skillEffect.skillEffectDetails,
@@ -131,7 +144,7 @@ export class CardSkillCalculator {
         // 计算一般分卡
         const current = skillEffectDetail.activateEffectValue
         // 组分特殊计算
-        // 目前只有组分会用skillEnhance，新FES不用
+        // 目前只有组分会用skillEnhance，Bloom FES不用
         if (skillEffect.skillEnhance !== undefined) {
           ret.scoreUpSameUnit = {
             unit: skillEffect.skillEnhance.skillEnhanceCondition.unit,
@@ -144,19 +157,19 @@ export class CardSkillCalculator {
         // 计算奶卡
         ret.lifeRecovery += skillEffectDetail.activateEffectValue
       } else if (skillEffect.skillEffectType === 'score_up_character_rank') {
-        // 计算新FES卡觉醒后，角色等级额外加成
+        // 计算Bloom FES卡觉醒后：角色等级额外加成
         if (skillEffect.activateCharacterRank !== undefined &&
             skillEffect.activateCharacterRank <= characterRank) {
-          ret.scoreUpcharacterRank =
-              Math.max(ret.scoreUpcharacterRank, skillEffectDetail.activateEffectValue)
+          ret.scoreUpCharacterRank =
+              Math.max(ret.scoreUpCharacterRank, skillEffectDetail.activateEffectValue)
         }
       } else if (skillEffect.skillEffectType === 'other_member_score_up_reference_rate') {
-        // 新FES卡原创角色觉醒前
+        // Bloom FES卡原创角色觉醒前：吸技能
         ret.scoreUpReference = {
           rate: skillEffectDetail.activateEffectValue, max: skillEffectDetail.activateEffectValue2 ?? 0
         }
       } else if (skillEffect.skillEffectType === 'score_up_unit_count') {
-        // 新FES卡V家觉醒前
+        // Bloom FES卡V家觉醒前：根据组合数量确定加成
         if (ret.scoreUpDifferentUnit === undefined) {
           ret.scoreUpDifferentUnit = new Map<number, number>()
         }
@@ -204,7 +217,7 @@ export class CardSkillCalculator {
    * @private
    */
   private static getScoreUpSelfFixed (detail: SkillDetailInternal): number {
-    return detail.scoreUpBasic + detail.scoreUpcharacterRank
+    return detail.scoreUpBasic + detail.scoreUpCharacterRank
   }
 }
 
@@ -222,16 +235,16 @@ interface SkillDetailInternal {
    * */
   scoreUpSameUnit?: { unit: string, value: number }
   /**
-   * 新FES觉醒后：角色等级加成
+   * Bloom FES觉醒后：角色等级加成
    */
-  scoreUpcharacterRank: number
+  scoreUpCharacterRank: number
   /**
-   * 新FES原创角色觉醒前：吸其他人技能
+   * Bloom FES原创角色觉醒前：吸其他人技能
    * 其中rate为吸技能比例，max为吸技能效果的最大值（不含基础加成）
    */
   scoreUpReference?: { rate: number, max: number }
   /**
-   * 新FES V家觉醒前：按不同组合数额外加分
+   * Bloom FES V家觉醒前：按不同组合数额外加分
    * key：不同组合数（不包括自己，1～2）、value：额外加成
    */
   scoreUpDifferentUnit?: Map<number, number>

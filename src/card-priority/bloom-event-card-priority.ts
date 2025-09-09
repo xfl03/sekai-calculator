@@ -28,7 +28,7 @@ export const bloomCardPriorities: CardPriority[] = [
   }, {
     eventBonus: 25 + 5, // 同队 5破三星
     cardRarityType: 'rarity_3',
-    masterRank: 0,
+    masterRank: 5,
     priority: 20
   }, {
     eventBonus: 25, // 异队 5破四星

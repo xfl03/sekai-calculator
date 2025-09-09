@@ -7,13 +7,13 @@ import { findOrThrow } from '../util/collection-util'
 import { type AreaItemLevel } from '../master-data/area-item-level'
 import { type CharacterRank } from '../master-data/character-rank'
 import { type UserCharacter } from '../user-data/user-character'
-import { CardDetailMap } from './card-detail-map'
 import { type DeckCardPowerDetail } from '../deck-information/deck-calculator'
 import { type CardMysekaiCanvasBonus } from '../master-data/card-mysekai-canvas-bonus'
 import type {
   UserMysekaiFixtureGameCharacterPerformanceBonus
 } from '../user-data/user-mysekai-fixture-game-character-performance-bonus'
 import { type MysekaiGateBonus } from '../mysekai-information/mysekai-service'
+import { CardDetailMapPower } from './card-detail-map-power'
 
 export class CardPowerCalculator {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -27,39 +27,29 @@ export class CardPowerCalculator {
    * @param userAreaItemLevels 用户拥有的区域道具等级
    * @param hasCanvasBonus 是否拥有自定义世界中的画布
    * @param userGateBonuses 用户拥有的自定义世界大门加成
+   * @param mysekaiFixtureLimit My SEKAI家具加成限制（用于World Link Finale）
    */
   public async getCardPower (
     userCard: UserCard, card: Card, cardUnits: string[], userAreaItemLevels: AreaItemLevel[], hasCanvasBonus: boolean,
-    userGateBonuses: MysekaiGateBonus[]
-  ): Promise<CardDetailMap<DeckCardPowerDetail>> {
-    const ret = new CardDetailMap<DeckCardPowerDetail>()
+    userGateBonuses: MysekaiGateBonus[], mysekaiFixtureLimit: number = Number.MAX_SAFE_INTEGER
+  ): Promise<CardDetailMapPower> {
+    const ret = new CardDetailMapPower()
     // 处理区域道具以外的综合力，这些与队友无关
     const basePower = await this.getCardBasePowers(userCard, card, hasCanvasBonus)
     const characterBonus = await this.getCharacterBonusPower(basePower, card.characterId)
-    const fixtureBonus = await this.getFixtureBonusPower(basePower, card.characterId)
+    const fixtureBonus = await this.getFixtureBonusPower(basePower, card.characterId, mysekaiFixtureLimit)
     const gateBonus = await this.getGateBonusPower(basePower, userGateBonuses, cardUnits)
-    // 处理区域道具，每个组合和属性需要计算4种情况
+    // 处理区域道具，卡牌的每个组合都需要单独计算
     for (const unit of cardUnits) {
-      // 同组合、同属性
-      let power = await this.getPower(
-        card, basePower, characterBonus, fixtureBonus, gateBonus,
-        userAreaItemLevels, unit, true, true)
-      ret.set(unit, 5, 5, power.total, power)
-      // 同组合、混属性
-      power = await this.getPower(
-        card, basePower, characterBonus, fixtureBonus, gateBonus,
-        userAreaItemLevels, unit, true, false)
-      ret.set(unit, 5, 1, power.total, power)
-      // 混组合、同属性
-      power = await this.getPower(
-        card, basePower, characterBonus, fixtureBonus, gateBonus,
-        userAreaItemLevels, unit, false, true)
-      ret.set(unit, 1, 5, power.total, power)
-      // 混组合、混属性
-      power = await this.getPower(
-        card, basePower, characterBonus, fixtureBonus, gateBonus,
-        userAreaItemLevels, unit, false, false)
-      ret.set(unit, 1, 1, power.total, power)
+      // 是否相同组合、是否相同属性，计算4种情况
+      for (let i = 0; i < 4; ++i) {
+        const sameUnit = (i & 1) === 1
+        const sameAttr = (i & 2) === 1
+        const power = await this.getPower(
+          card, basePower, characterBonus, fixtureBonus, gateBonus,
+          userAreaItemLevels, unit, sameUnit, sameAttr)
+        ret.setPower(unit, sameUnit, sameAttr, power)
+      }
     }
     return ret
   }
@@ -227,8 +217,11 @@ export class CardPowerCalculator {
    * 计算自定义世界中的家具加成（玩偶）
    * @param basePower 卡牌基础综合力
    * @param characterId 角色ID
+   * @param mysekaiFixtureLimit My SEKAI家具加成限制（用于World Link Finale）
    */
-  private async getFixtureBonusPower (basePower: number[], characterId: number): Promise<number> {
+  private async getFixtureBonusPower (
+    basePower: number[], characterId: number, mysekaiFixtureLimit: number = Number.MAX_SAFE_INTEGER
+  ): Promise<number> {
     const userFixtureBonuses =
         await this.dataProvider.getUserData<UserMysekaiFixtureGameCharacterPerformanceBonus[]>(
           'userMysekaiFixtureGameCharacterPerformanceBonuses')
@@ -243,9 +236,12 @@ export class CardPowerCalculator {
       return 0
     }
 
+    // 给World Link Finale家具加成做封顶
+    const bonus = Math.min(fixtureBonus.totalBonusRate, mysekaiFixtureLimit)
+
     // 按各个综合分别计算加成，其中totalBonusRate单位是0.1%
     return Math.floor(Math.fround(CardPowerCalculator.sumPower(basePower) *
-        Math.fround(Math.fround(fixtureBonus.totalBonusRate) * Math.fround(0.001))))
+        Math.fround(Math.fround(bonus) * Math.fround(0.001))))
   }
 
   /**

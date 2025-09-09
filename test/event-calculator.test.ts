@@ -1,5 +1,11 @@
 import { TestDataProvider } from './data-provider.test'
-import { CardEventCalculator, DeckService, EventCalculator, EventType, LiveType } from '../src'
+import {
+  CardEventCalculator,
+  DeckService,
+  EventCalculator,
+  EventType,
+  LiveType
+} from '../src'
 
 const eventCalculator = new EventCalculator(TestDataProvider.INSTANCE)
 const cardEventCalculator = new CardEventCalculator(TestDataProvider.INSTANCE)
