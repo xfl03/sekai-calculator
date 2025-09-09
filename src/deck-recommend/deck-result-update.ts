@@ -67,10 +67,10 @@ export function toRecommendDeck (deckDetail: DeckDetail, score: number): Recomme
  * @param deckCards 已经组好的
  * @param cardDetail 计划组入的
  */
-export function checkWorldBloomDeck (deckCards: CardDetail[], cardDetail: CardDetail): boolean {
+export function isDeckAttrLessThan3 (deckCards: CardDetail[], cardDetail: CardDetail): boolean {
   // 如果算上当前卡只有3张，无论如何都能组出3属性队伍
   if (deckCards.length <= 2) {
-    return true
+    return false
   }
   // 属性计数
   const set = new Set<string>()
@@ -80,8 +80,8 @@ export function checkWorldBloomDeck (deckCards: CardDetail[], cardDetail: CardDe
   }
   // 4张卡至少2属性
   if (deckCards.length === 3) {
-    return set.size >= 2
+    return set.size < 2
   }
   // 5张卡至少3属性
-  return set.size >= 3
+  return set.size < 3
 }
