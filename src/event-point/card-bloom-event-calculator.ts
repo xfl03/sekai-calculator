@@ -14,19 +14,27 @@ export class CardBloomEventCalculator {
 
   /**
    * 获取单张卡牌的支援加成
-   * 需要注意的是，支援卡组只能上对应团队的卡，其它卡上不了
+   * 需要注意的是，普通World Link支援卡组只能上活动组合的卡，其它卡上不了（Finale为全卡）
    * @param userCard 用户卡牌
+   * @param card 卡牌
+   * @param units 卡牌对应组合
    * @param eventId 活动ID
+   * @param eventUnit 箱活团队
    * @param specialCharacterId 指定的加成角色（正常为篇章角色，Finale为队长角色）
    */
-  public async getCardSupportDeckBonus (userCard: UserCard, {
+  public async getCardSupportDeckBonus (userCard: UserCard, card: Card, units: string[], {
     eventId = 0,
+    eventUnit,
     specialCharacterId = 0
   }: EventConfig): Promise<number | undefined> {
     // 未指定角色的话，不使用支援加成
     if (specialCharacterId <= 0) return undefined
-    const cards = await this.dataProvider.getMasterData<Card>('cards')
-    const card = findOrThrow(cards, it => it.id === userCard.cardId)
+
+    // 普通的World Link需要先判断一张卡牌是否是指定组合，如果不是的话不使用支援加成
+    // 如果是World Link Finale的非混活，所有卡都能当职员卡
+    if (eventUnit !== undefined && !units.includes(eventUnit)) {
+      return undefined
+    }
 
     // 获得稀有度对应的加成
     const worldBloomSupportDeckBonuses =

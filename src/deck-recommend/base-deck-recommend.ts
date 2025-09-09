@@ -12,7 +12,6 @@ import { filterCardPriority } from '../card-priority/card-priority-filter'
 import { toRecommendDeck, updateDeck } from './deck-result-update'
 import { AreaItemService } from '../area-item-information/area-item-service'
 import { type EventConfig, EventType } from '../event-point/event-service'
-import type { WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
 
 export class BaseDeckRecommend {
   private readonly cardCalculator: CardCalculator
@@ -38,15 +37,14 @@ export class BaseDeckRecommend {
    * @param member 人数限制（2-5、默认5）
    * @param leaderCharacter C位角色ID
    * @param honorBonus 称号加成
-   * @param cardBonusCountLimit 特定卡牌加成数量限制（用于World Link Finale）
-   * @param worldBloomDifferentAttributeBonuses （可选）World Link不同属性加成
+   * @param eventConfig 活动信息
    * @param deckCards 计算过程中的当前卡组
    * @private
    */
   private static findBestCards (
     cardDetails: CardDetail[], allCards: CardDetail[], scoreFunc: (deckDetail: DeckDetail) => number, limit: number = 1,
     isChallengeLive: boolean = false, member: number = 5, leaderCharacter: number = 0, honorBonus: number = 0,
-    cardBonusCountLimit?: number, worldBloomDifferentAttributeBonuses?: WorldBloomDifferentAttributeBonus[],
+    eventConfig: EventConfig = {},
     deckCards: CardDetail[] = []
   ): RecommendDeck[] {
     // 防止挑战Live卡的数量小于允许上场的数量导致无法组队
@@ -56,7 +54,9 @@ export class BaseDeckRecommend {
     // 已经是完整卡组，计算当前卡组的值
     if (deckCards.length === member) {
       const deckDetail = DeckCalculator.getDeckDetailByCards(
-        deckCards, allCards, honorBonus, cardBonusCountLimit, worldBloomDifferentAttributeBonuses)
+        deckCards, allCards, honorBonus, eventConfig.cardBonusCountLimit,
+        eventConfig.worldBloomDifferentAttributeBonuses
+      )
       const score = scoreFunc(deckDetail)
       // 如果固定leader，不检查技能效果直接返回
       if (leaderCharacter > 0) {
@@ -80,7 +80,7 @@ export class BaseDeckRecommend {
       swap(deckCards, 0, bestScoreIndex)
       return BaseDeckRecommend.findBestCards(
         cardDetails, allCards, scoreFunc, limit, isChallengeLive, member, leaderCharacter, honorBonus,
-        cardBonusCountLimit, worldBloomDifferentAttributeBonuses, deckCards)
+        eventConfig, deckCards)
     }
     // 非完整卡组，继续遍历所有情况
     let ans: RecommendDeck[] = []
@@ -108,7 +108,7 @@ export class BaseDeckRecommend {
         continue
       }
       // 为了优化性能，如果是World Link活动，强制5色
-      if (worldBloomDifferentAttributeBonuses !== undefined && deckCards.some(it => it.attr === card.attr)) {
+      if (eventConfig.worldBloomDifferentAttributeBonuses !== undefined && deckCards.some(it => it.attr === card.attr)) {
         continue
       }
       // 要求生成的卡组后面4个位置按强弱排序、同强度按卡牌ID排序
@@ -128,7 +128,7 @@ export class BaseDeckRecommend {
       // 递归，寻找所有情况
       const result = BaseDeckRecommend.findBestCards(
         cardDetails, allCards, scoreFunc, limit, isChallengeLive, member, leaderCharacter, honorBonus,
-        cardBonusCountLimit, worldBloomDifferentAttributeBonuses, [...deckCards, card])
+        eventConfig, [...deckCards, card])
       ans = updateDeck(ans, result, limit)
     }
     // 在最外层检查一下是否成功组队
@@ -152,13 +152,7 @@ export class BaseDeckRecommend {
    * @param cardConfig 卡牌设置
    * @param debugLog 测试日志处理函数
    * @param liveType Live类型
-   * @param eventId 活动ID（如果要计算活动PT的话）
-   * @param eventType 活动类型（如果要计算活动PT的话）
-   * @param eventUnit 箱活的团队（用于把卡过滤到只剩该团队）
-   * @param specialCharacterId 指定角色ID（如果要计算World Link活动PT的话）
-   * @param cardBonusCountLimit 特定卡牌加成数量限制（用于World Link Finale）
-   * @param worldBloomDifferentAttributeBonuses World Link属性加成（如果要计算World Link活动PT的话）
-   * @param isChallengeLive 是否挑战Live（人员可重复）
+   * @param eventConfig 活动配置
    */
   public async recommendHighScoreDeck (
     userCards: UserCard[], scoreFunc: ScoreFunction,
@@ -172,25 +166,15 @@ export class BaseDeckRecommend {
       }
     }: DeckRecommendConfig,
     liveType: LiveType,
-    {
-      eventId = 0,
-      eventType = EventType.NONE,
-      eventUnit = undefined,
-      specialCharacterId = 0,
-      cardBonusCountLimit = 5,
-      worldBloomDifferentAttributeBonuses = undefined
-    }: EventConfig = {}
+    eventConfig: EventConfig = {}
   ): Promise<RecommendDeck[]> {
+    const { eventType = EventType.NONE, eventUnit } = eventConfig
+    // 用于计算的卡（主队伍+应援队伍）
     const areaItemLevels = await this.areaItemService.getAreaItemLevels()
-    // 全量卡（主队伍+应援队伍）
-    const allCards = await this.cardCalculator.batchGetCardDetail(userCards, cardConfig,
-      {
-        eventId,
-        specialCharacterId
-      }, areaItemLevels)
-    // 用于计算的卡（主队伍）
-    let cards = allCards
+    let cards =
+        await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventConfig, areaItemLevels)
     // 过滤箱活的卡，不上其它组合的
+    // 因为普通箱活的World Link应援队伍只能从当前组合选，这里照样可以过滤不影响结果
     if (eventUnit !== undefined) {
       const originCardsLength = cards.length
       cards = cards.filter(it =>
@@ -212,9 +196,9 @@ export class BaseDeckRecommend {
       const cards0 = cardDetails.sort((a, b) => a.cardId - b.cardId)
       debugLog(`Recommend deck with ${cards0.length}/${cards.length} cards `)
       debugLog(cards0.map(it => it.cardId).toString())
-      const recommend = BaseDeckRecommend.findBestCards(cards0, allCards,
+      const recommend = BaseDeckRecommend.findBestCards(cards0, cards,
         deckDetail => scoreFunc(musicMeta, deckDetail), limit, liveType === LiveType.CHALLENGE, member,
-        leaderCharacter, honorBonus, cardBonusCountLimit, worldBloomDifferentAttributeBonuses)
+        leaderCharacter, honorBonus, eventConfig)
       if (recommend.length >= limit) return recommend
     }
   }

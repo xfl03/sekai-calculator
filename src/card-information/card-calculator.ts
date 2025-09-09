@@ -40,21 +40,15 @@ export class CardCalculator {
    * @param userCard 用户卡牌
    * @param userAreaItemLevels 用户拥有的区域道具等级
    * @param config 卡牌设置
-   * @param eventId 活动ID（如果非0则计算活动加成）
-   * @param specialCharacterId 指定的角色ID（用于World Finale活动支援卡组加成）
-   * @param scoreUpLimit 卡牌技能限制（用于World Link Finale）
-   * @param mysekaiFixtureLimit My SEKAI家具加成限制（用于World Link Finale）
+   * @param eventConfig 活动信息（可空）
    * @param hasCanvasBonus 是否拥有自定义世界中的画布
    * @param userGateBonuses 用户拥有的大门加成
    */
   public async getCardDetail (
-    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {}, {
-      eventId = 0,
-      specialCharacterId = 0,
-      skillScoreUpLimit = Number.MAX_SAFE_INTEGER,
-      mysekaiFixtureLimit = Number.MAX_SAFE_INTEGER
-    }: EventConfig = {}, hasCanvasBonus: boolean, userGateBonuses: MysekaiGateBonus[]
+    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {},
+    eventConfig: EventConfig = {}, hasCanvasBonus: boolean, userGateBonuses: MysekaiGateBonus[]
   ): Promise<CardDetail | undefined> {
+    const { eventId = 0 } = eventConfig
     const cards = await this.dataProvider.getMasterData<Card>('cards')
     const card = findOrThrow(cards, it => it.id === userCard.cardId)
 
@@ -64,15 +58,15 @@ export class CardCalculator {
     const userCard0 = await this.cardService.applyCardConfig(userCard, card, config0)
 
     const units = await this.cardService.getCardUnits(card)
-    const skill = await this.skillCalculator.getCardSkill(userCard0, card, skillScoreUpLimit)
+    const skill = await this.skillCalculator.getCardSkill(userCard0, card, eventConfig.skillScoreUpLimit)
     const power =
       await this.powerCalculator.getCardPower(
-        userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses, mysekaiFixtureLimit)
+        userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses, eventConfig.mysekaiFixtureLimit)
     const eventBonus = eventId === 0
       ? undefined
       : await this.eventCalculator.getCardEventBonus(userCard0, eventId)
     const supportDeckBonus =
-      await this.bloomEventCalculator.getCardSupportDeckBonus(userCard0, { eventId, specialCharacterId })
+      await this.bloomEventCalculator.getCardSupportDeckBonus(userCard0, card, units, eventConfig)
     return {
       cardId: card.id,
       level: userCard0.level,
@@ -99,7 +93,7 @@ export class CardCalculator {
    */
   public async batchGetCardDetail (
     userCards: UserCard[], config: Record<string, CardConfig> = {},
-    eventConfig?: EventConfig, areaItemLevels?: AreaItemLevel[]
+    eventConfig: EventConfig = {}, areaItemLevels?: AreaItemLevel[]
   ): Promise<CardDetail[]> {
     const areaItemLevels0 = areaItemLevels === undefined
       ? await this.areaItemService.getAreaItemLevels()

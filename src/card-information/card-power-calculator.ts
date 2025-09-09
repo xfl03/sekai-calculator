@@ -232,7 +232,7 @@ export class CardPowerCalculator {
     // 寻找对应的加成，如果没有任何加成会空
     const fixtureBonus = userFixtureBonuses
       .find(it => it.gameCharacterId === characterId)
-    if (fixtureBonus === undefined || fixtureBonus === null) {
+    if (fixtureBonus === undefined) {
       return 0
     }
 

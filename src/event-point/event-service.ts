@@ -9,6 +9,7 @@ import type { EventSkillScoreUpLimit } from '../master-data/event-skill-score-up
 import {
   type EventMysekaiFixtureGameCharacterPerformanceBonusLimit
 } from '../master-data/event-mysekai-fixture-game-character-performance-bonus-limit'
+import type { GameCharacter } from '../master-data/game-character'
 
 export class EventService {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -55,6 +56,7 @@ export class EventService {
 
   /**
    * 获取箱活的加成团队
+   * V家活动返回piapro
    * 如果非箱活，会返回undefined
    * @param eventId 活动ID
    */
@@ -63,14 +65,30 @@ export class EventService {
       await this.dataProvider.getMasterData<EventDeckBonus>('eventDeckBonuses')
     const gameCharacterUnits =
       await this.dataProvider.getMasterData<GameCharacterUnit>('gameCharacterUnits')
-    const set = new Set<string>()
-    eventDeckBonuses
+    const gameCharacters = await this.dataProvider.getMasterData<GameCharacter>('gameCharacters')
+    const bonuses = eventDeckBonuses
       .filter(it => it.eventId === eventId && it.gameCharacterUnitId !== undefined)
       .map(it =>
         findOrThrow(gameCharacterUnits, a => a.id === it.gameCharacterUnitId))
-      .forEach(it => set.add(it.unit))
-    if (set.size !== 1) return undefined
-    return Array.from(set)[0]
+    // 用Map统计每个组合数量
+    const map = new Map<string, number>()
+    bonuses.forEach(gcu => {
+      const gameCharacter =
+            findOrThrow(gameCharacters, it => it.id === gcu.gameCharacterId)
+      // 角色原始组合
+      map.set(gameCharacter.unit, (map.get(gameCharacter.unit) ?? 0) + 1)
+      // VS应援组合
+      if (gameCharacter.unit !== gcu.unit) {
+        map.set(gcu.unit, (map.get(gcu.unit) ?? 0) + 1)
+      }
+    })
+    for (const [key, value] of map) {
+      // 如果当前所有加成角色都在某一个组合，这个组合自然就是箱活组合
+      if (value === bonuses.length) {
+        return key
+      }
+    }
+    return undefined
   }
 
   /**
@@ -93,7 +111,7 @@ export class EventService {
 
   /**
    * 获得World Link Finale卡牌技能限制
-   * @param eventId
+   * @param eventId 活动ID
    */
   public async getEventSkillScoreUpLimit (eventId: number): Promise<number> {
     const limits =
@@ -105,7 +123,7 @@ export class EventService {
 
   /**
    * 获得World Link Finale My SEKAI家具加成限制
-   * @param eventId
+   * @param eventId 活动ID
    */
   public async getMysekaiFixtureLimit (eventId: number): Promise<number> {
     const limits =
