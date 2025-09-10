@@ -44,7 +44,7 @@ export class CardPowerCalculator {
       // 是否相同组合、是否相同属性，计算4种情况
       for (let i = 0; i < 4; ++i) {
         const sameUnit = (i & 1) === 1
-        const sameAttr = (i & 2) === 1
+        const sameAttr = (i & 2) === 2
         const power = await this.getPower(
           card, basePower, characterBonus, fixtureBonus, gateBonus,
           userAreaItemLevels, unit, sameUnit, sameAttr)
