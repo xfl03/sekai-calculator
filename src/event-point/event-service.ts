@@ -10,6 +10,7 @@ import {
   type EventMysekaiFixtureGameCharacterPerformanceBonusLimit
 } from '../master-data/event-mysekai-fixture-game-character-performance-bonus-limit'
 import type { GameCharacter } from '../master-data/game-character'
+import { type WorldBloom } from '../master-data/world-bloom'
 
 export class EventService {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -50,7 +51,8 @@ export class EventService {
       skillScoreUpLimit: await this.getEventSkillScoreUpLimit(eventId),
       mysekaiFixtureLimit: await this.getMysekaiFixtureLimit(eventId),
       worldBloomDifferentAttributeBonuses:
-          eventType === EventType.BLOOM ? await this.getWorldBloomDifferentAttributeBonuses() : undefined
+          eventType === EventType.BLOOM ? await this.getWorldBloomDifferentAttributeBonuses() : undefined,
+      worldBloomType: eventType === EventType.BLOOM ? await this.getWorldBloomType(eventId) : undefined
     }
   }
 
@@ -126,11 +128,25 @@ export class EventService {
    * @param eventId 活动ID
    */
   public async getMysekaiFixtureLimit (eventId: number): Promise<number> {
-    const limits =
-        await this.dataProvider.getMasterData<EventMysekaiFixtureGameCharacterPerformanceBonusLimit>('eventMysekaiFixtureGameCharacterPerformanceBonusLimits')
+    const limits = await this.dataProvider
+      .getMasterData<EventMysekaiFixtureGameCharacterPerformanceBonusLimit>(
+      'eventMysekaiFixtureGameCharacterPerformanceBonusLimits'
+    )
     const limit =
         limits.find(it => it.eventId === eventId)
     return limit?.bonusRateLimit ?? Number.MAX_SAFE_INTEGER
+  }
+
+  /**
+   * 获得World Link活动类型
+   * 可能的返回值：undefined（非World Link）、"game_character"（普通）、"finale"（Final）
+   * @param eventId
+   */
+  public async getWorldBloomType (eventId: number): Promise<string | undefined> {
+    const worldBlooms =
+        await this.dataProvider.getMasterData<WorldBloom>('worldBlooms')
+    const worldBloom = worldBlooms.find(it => it.eventId === eventId)
+    return worldBloom?.worldBloomChapterType
   }
 }
 
@@ -180,4 +196,9 @@ export interface EventConfig {
    * 不同属性加成（用于World Link活动）
    */
   worldBloomDifferentAttributeBonuses?: WorldBloomDifferentAttributeBonus[]
+  /**
+   * World Link类型
+   * game_character（普通）、finale（Final）
+   */
+  worldBloomType?: string
 }

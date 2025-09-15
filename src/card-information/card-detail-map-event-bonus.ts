@@ -29,16 +29,15 @@ export class CardDetailMapEventBonus extends CardDetailMap<CardEventBonusDetail>
    * 获得用于展示的值（绝对不可以用于计算）
    * 计算时必须要考虑卡牌加成数量限制
    */
-  public getBonusForDisplay (leader: boolean): number {
-    const bonus = this.getBonus()
-    return bonus.fixedBonus + bonus.cardBonus + (leader ? bonus.leaderBonus : 0)
+  public getBonusForDisplay (leader: boolean): string {
+    return this.getMaxBonus(leader).toString()
   }
 
   /**
    * 最大加成
    */
-  public getMaxBonus (): number {
+  public getMaxBonus (leader: boolean): number {
     const bonus = this.getBonus()
-    return bonus.fixedBonus + bonus.cardBonus + bonus.leaderBonus
+    return bonus.fixedBonus + bonus.cardBonus + (leader ? bonus.leaderBonus : 0)
   }
 }

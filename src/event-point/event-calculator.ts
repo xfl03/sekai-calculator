@@ -110,7 +110,7 @@ export class EventCalculator {
         bonus += bonusDetail.cardBonus
         cardBonusCount++
       }
-      // World Link Finale的Leader称号加成
+      // World Link Final的Leader称号、卡牌Leader额外加成
       if (i === 0) {
         bonus += bonusDetail.leaderBonus
       }

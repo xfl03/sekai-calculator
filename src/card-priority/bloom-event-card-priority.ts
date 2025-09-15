@@ -1,14 +1,20 @@
 import { type CardPriority } from './card-priority-filter'
 
 /**
- * 卡牌稀有度顺序，用于世界开花
+ * 卡牌稀有度顺序，用于World Link
  */
 export const bloomCardPriorities: CardPriority[] = [
+  {
+    eventBonus: 25 + 10 + 20, // 同队 四星 当期
+    cardRarityType: 'rarity_4',
+    masterRank: 0,
+    priority: 0
+  },
   {
     eventBonus: 25 + 25, // 同队 5破四星
     cardRarityType: 'rarity_4',
     masterRank: 5,
-    priority: 0
+    priority: 5
   },
   {
     eventBonus: 25 + 10, // 同队 0破四星

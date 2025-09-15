@@ -71,8 +71,9 @@ export class CardEventCalculator {
       .find((it: any) => it.eventId === eventId && it.cardId === card.id)
     const cardBonus = cardBonus0?.bonusRate ?? 0
 
-    // 处理World Link Finale的Leader活动排名称号加成（因为和Leader位相关，要单独加进返回结构，不能简单加算）
-    const leaderBonus = await this.getCardLeaderBonus(eventId, card.characterId)
+    // 处理World Link Finale的Leader活动排名称号加成、Leader卡牌加成（因为和Leader位相关，要单独加进返回结构，不能简单加算）
+    const leaderBonus =
+        await this.getCardLeaderBonus(eventId, card.characterId, cardBonus0?.leaderBonusRate ?? 0)
 
     // 与卡组相关的内容要单独加进返回结构，不能简单加算
     const bonus = new CardDetailMapEventBonus()
@@ -85,26 +86,29 @@ export class CardEventCalculator {
   }
 
   /**
-   * 获得Leader称号加成（World Link Finale）
-   * @param eventId
-   * @param characterId
+   * 获得Leader称号加成、卡牌额外加成（World Link Finale）
+   * @param eventId 活动ID
+   * @param characterId 角色ID
+   * @param cardLeaderBonus 卡牌的Leader额外加成
    * @private
    */
-  private async getCardLeaderBonus (eventId: number, characterId: number): Promise<number> {
+  private async getCardLeaderBonus (
+    eventId: number, characterId: number, cardLeaderBonus: number
+  ): Promise<number> {
     const eventHonorBonuses = await
     this.dataProvider.getMasterData<EventHonorBonus>('eventHonorBonuses')
     const bonus = eventHonorBonuses
       .find(it => it.eventId === eventId && it.leaderGameCharacterId === characterId)
-    // 如果没有加成直接返回
+    // 如果没有称号加成直接返回
     if (bonus === undefined) {
-      return 0
+      return cardLeaderBonus
     }
     // 检查用户是否有特定称号
     const userHonors = await this.dataProvider.getUserData<UserHonor[]>('userHonors')
     if (userHonors.some(it => it.honorId === bonus.honorId)) {
-      return bonus.bonusRate
+      return bonus.bonusRate + cardLeaderBonus
     }
-    return 0
+    return cardLeaderBonus
   }
 }
 
@@ -115,12 +119,12 @@ export interface CardEventBonusDetail {
    */
   fixedBonus: number
   /**
-   * 特定卡牌加成（正常是当期四星，World Link Finale为当年组合限定四星且有加成上限）
+   * 特定卡牌加成（正常是当期四星，World Link Finale为当年组合限定四星且有加成上限且不含Leader额外加成）
    * 百分比，实际使用的时候还得/100
    */
   cardBonus: number
   /**
-   * World Link Finale的Leader活动排名称号加成（和Leader位相关）
+   * World Link Finale的Leader活动排名称号加成、Leader额外卡牌加成（和Leader位相关）
    * 百分比，实际使用的时候还得/100
    */
   leaderBonus: number

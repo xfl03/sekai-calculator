@@ -145,9 +145,10 @@ function canMakeDeck (liveType: LiveType, eventType: EventType, cardDetails: Car
  * @param cardDetails 卡牌
  * @param preCardDetails 上一次的卡牌，保证返回卡牌数量大于等于它，且能组成队伍
  * @param member 卡组成员限制
+ * @param leader 固定的队长角色（用于判断leader加成）
  */
 export function filterCardPriority (
-  liveType: LiveType, eventType: EventType, cardDetails: CardDetail[], preCardDetails: CardDetail[], member: number = 5
+  liveType: LiveType, eventType: EventType, cardDetails: CardDetail[], preCardDetails: CardDetail[], member: number = 5, leader: number = 0
 ): CardDetail[] {
   const cardPriorities = getCardPriorities(liveType, eventType)
   let cards: CardDetail[] = []
@@ -166,7 +167,8 @@ export function filterCardPriority (
       .filter(it => !cardIds.has(it.cardId) &&
         it.cardRarityType === cardPriority.cardRarityType &&
         it.masterRank >= cardPriority.masterRank &&
-        (it.eventBonus === undefined || it.eventBonus.getMaxBonus() >= cardPriority.eventBonus))
+        (it.eventBonus === undefined ||
+            it.eventBonus.getMaxBonus(leader <= 0 || leader === it.characterId) >= cardPriority.eventBonus))
     filtered.forEach(it => cardIds.add(it.cardId))
     cards = [...cards, ...filtered]
   }

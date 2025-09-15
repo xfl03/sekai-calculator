@@ -202,7 +202,7 @@ export interface DeckCardDetail {
   skillLevel: number
   masterRank: number
   power: DeckCardPowerDetail
-  eventBonus?: number
+  eventBonus?: string
   skill: DeckCardSkillDetail
 }
 

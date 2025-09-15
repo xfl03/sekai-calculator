@@ -168,7 +168,8 @@ export class BaseDeckRecommend {
     liveType: LiveType,
     eventConfig: EventConfig = {}
   ): Promise<RecommendDeck[]> {
-    const { eventType = EventType.NONE, eventUnit } = eventConfig
+    const { eventType = EventType.NONE, eventUnit, specialCharacterId, worldBloomType } = eventConfig
+    const honorBonus = await this.deckCalculator.getHonorBonusPower()
     // 用于计算的卡（主队伍+应援队伍）
     const areaItemLevels = await this.areaItemService.getAreaItemLevels()
     let cards =
@@ -182,12 +183,16 @@ export class BaseDeckRecommend {
       debugLog(`Cards filtered with unit: ${cards.length}/${originCardsLength}`)
       debugLog(cards.map(it => it.cardId).toString())
     }
-    const honorBonus = await this.deckCalculator.getHonorBonusPower()
+    // World Link Finale，需要强制指定Leader
+    if (worldBloomType === 'finale') {
+      leaderCharacter = specialCharacterId
+    }
 
     // 为了优化性能，会根据活动加成和卡牌稀有度优先级筛选卡牌
     let preCardDetails = [] as CardDetail[]
     while (true) {
-      const cardDetails = filterCardPriority(liveType, eventType, cards, preCardDetails, member)
+      const cardDetails =
+          filterCardPriority(liveType, eventType, cards, preCardDetails, member, leaderCharacter)
       if (cardDetails.length === preCardDetails.length) {
         // 如果所有卡牌都上阵了还是组不出队伍，就报错
         throw new Error(`Cannot recommend any deck in ${cards.length} cards`)
