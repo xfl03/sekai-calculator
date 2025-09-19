@@ -106,7 +106,7 @@ export class EventCalculator {
       bonus += bonusDetail.fixedBonus
       // 特定卡牌计算
       // 处理World Link Finale的卡牌加成上限（4张）
-      if (cardBonusCount < cardBonusCountLimit) {
+      if (bonusDetail.cardBonus > 0 && cardBonusCount < cardBonusCountLimit) {
         bonus += bonusDetail.cardBonus
         cardBonusCount++
       }

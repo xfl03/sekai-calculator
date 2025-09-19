@@ -97,18 +97,18 @@ export class CardEventCalculator {
   ): Promise<number> {
     const eventHonorBonuses = await
     this.dataProvider.getMasterData<EventHonorBonus>('eventHonorBonuses')
-    const bonus = eventHonorBonuses
-      .find(it => it.eventId === eventId && it.leaderGameCharacterId === characterId)
+    const bonuses = eventHonorBonuses
+      .filter(it => it.eventId === eventId && it.leaderGameCharacterId === characterId)
     // 如果没有称号加成直接返回
-    if (bonus === undefined) {
+    if (bonuses.length === 0) {
       return cardLeaderBonus
     }
     // 检查用户是否有特定称号
     const userHonors = await this.dataProvider.getUserData<UserHonor[]>('userHonors')
-    if (userHonors.some(it => it.honorId === bonus.honorId)) {
-      return bonus.bonusRate + cardLeaderBonus
-    }
-    return cardLeaderBonus
+    return userHonors
+      .map(honor => bonuses.find(it => it.honorId === honor.honorId))
+      .filter(it => it !== undefined)
+      .reduce((p, it) => p + (it?.bonusRate ?? 0), cardLeaderBonus)
   }
 }
 

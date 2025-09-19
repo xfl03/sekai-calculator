@@ -107,7 +107,7 @@ export class EventService {
   public async getEventCardBonusCountLimit (eventId: number): Promise<number> {
     const limits = await this.dataProvider
       .getMasterData<EventCardBonusLimit>('eventCardBonusLimits')
-    const limit = limits.find(it => it.id === eventId)
+    const limit = limits.find(it => it.eventId === eventId)
     return limit?.memberCountLimit ?? 5 // 默认全加成
   }
 
