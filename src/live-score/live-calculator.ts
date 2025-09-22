@@ -9,12 +9,15 @@ import { type UserCard } from '../user-data/user-card'
 import { type MusicMeta } from '../common/music-meta'
 import { duplicateObj, findOrThrow } from '../util/collection-util'
 import { type ScoreFunction } from '../deck-recommend/base-deck-recommend'
+import { EventService } from '../event-point/event-service'
 
 export class LiveCalculator {
   private readonly deckCalculator: DeckCalculator
+  private readonly eventService: EventService
 
   public constructor (private readonly dataProvider: DataProvider) {
     this.deckCalculator = new DeckCalculator(dataProvider)
+    this.eventService = new EventService(dataProvider)
   }
 
   /**
@@ -217,12 +220,16 @@ export class LiveCalculator {
    * @param musicMeta 歌曲信息
    * @param liveType Live类型
    * @param liveSkills 技能顺序（多人或最佳留空）
+   * @param eventId 活动ID（可选，用于World Link Final各种限制）
    */
   public async getLiveDetail (
     deckCards: UserCard[], musicMeta: MusicMeta, liveType: LiveType,
-    liveSkills: LiveSkill[] | undefined = undefined
+    liveSkills: LiveSkill[] | undefined = undefined, eventId?: number
   ): Promise<LiveDetail> {
-    const deckDetail = await this.deckCalculator.getDeckDetail(deckCards, deckCards)
+    const eventConfig = eventId === undefined
+      ? undefined
+      : await this.eventService.getEventConfig(eventId)
+    const deckDetail = await this.deckCalculator.getDeckDetail(deckCards, deckCards, eventConfig)
     // 如果给定了顺序就按顺序发动，没有的话就按最优发动
     const skills = liveType === LiveType.MULTI
       ? undefined

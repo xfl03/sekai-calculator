@@ -149,7 +149,7 @@ test('bloom', async () => {
   expect(recommend0.length).toBeGreaterThanOrEqual(1)
   expect(recommend0[0].supportDeckBonus).toBeGreaterThanOrEqual(1)
 
-  const recommend1 = await bloomSupportRecommend.recommendBloomSupportDeck(recommend0[0].cards, 18)
+  const recommend1 = await bloomSupportRecommend.recommendBloomSupportDeck(recommend0[0].cards, 112, 18)
   // console.log(recommend1.map(it => it.supportDeckBonus))
   expect(recommend1.reduce((a, it) => a + safeNumber(it.supportDeckBonus), 0)).toBe(recommend0[0].supportDeckBonus)
 })

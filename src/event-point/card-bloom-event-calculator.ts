@@ -19,20 +19,19 @@ export class CardBloomEventCalculator {
    * @param card 卡牌
    * @param units 卡牌对应组合
    * @param eventId 活动ID
-   * @param eventUnit 箱活团队
+   * @param worldBloomSupportUnit World Link支援团队
    * @param specialCharacterId 指定的加成角色（正常为篇章角色，Finale为队长角色）
    */
   public async getCardSupportDeckBonus (userCard: UserCard, card: Card, units: string[], {
     eventId = 0,
-    eventUnit,
+    worldBloomSupportUnit,
     specialCharacterId = 0
   }: EventConfig): Promise<number | undefined> {
-    // 未指定角色的话，不使用支援加成
-    if (specialCharacterId <= 0) return undefined
+    // 未指定角色或组合的话，不使用支援加成
+    if (specialCharacterId <= 0 || worldBloomSupportUnit === undefined) return undefined
 
-    // 普通的World Link需要先判断一张卡牌是否是指定组合，如果不是的话不使用支援加成
-    // 如果是World Link Finale的非混活，所有卡都能当职员卡
-    if (eventUnit !== undefined && !units.includes(eventUnit)) {
+    // 任何World Link都需要先判断一张卡牌是否是和支援角色组合（V家不看应援队伍）匹配，如果不是的话不使用支援加成
+    if (!units.includes(worldBloomSupportUnit)) {
       return undefined
     }
 

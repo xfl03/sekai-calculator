@@ -52,7 +52,8 @@ export class EventService {
       mysekaiFixtureLimit: await this.getMysekaiFixtureLimit(eventId),
       worldBloomDifferentAttributeBonuses:
           eventType === EventType.BLOOM ? await this.getWorldBloomDifferentAttributeBonuses() : undefined,
-      worldBloomType: eventType === EventType.BLOOM ? await this.getWorldBloomType(eventId) : undefined
+      worldBloomType: eventType === EventType.BLOOM ? await this.getWorldBloomType(eventId) : undefined,
+      worldBloomSupportUnit: await this.getWorldBloomSupportUnit(specialCharacterId)
     }
   }
 
@@ -148,6 +149,19 @@ export class EventService {
     const worldBloom = worldBlooms.find(it => it.eventId === eventId)
     return worldBloom?.worldBloomChapterType
   }
+
+  /**
+   * 获得World Link应援角色对应的组合（只看原始组合）
+   * @param specialCharacterId 支援角色
+   */
+  public async getWorldBloomSupportUnit (specialCharacterId?: number): Promise<string | undefined> {
+    if (specialCharacterId === undefined) {
+      return undefined
+    }
+    const gameCharacters = await this.dataProvider.getMasterData<GameCharacter>('gameCharacters')
+    const gameCharacter = findOrThrow(gameCharacters, it => it.id === specialCharacterId)
+    return gameCharacter.unit
+  }
 }
 
 /**
@@ -201,4 +215,8 @@ export interface EventConfig {
    * game_character（普通）、finale（Final）
    */
   worldBloomType?: string
+  /**
+   * 支援角色组合，和specialCharacterId保持一致（用于World Link活动）
+   */
+  worldBloomSupportUnit?: string
 }

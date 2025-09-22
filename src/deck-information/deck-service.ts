@@ -101,13 +101,15 @@ export class DeckService {
 
   /**
    * 给定卡牌组建新的用户世界连接应援卡组
-   * @param userCards 卡牌（0～12张）
+   * @param userCards 卡牌（0～20张）
+   * @param eventId 活动ID
    * @param gameCharacterId 角色ID
    */
-  public static toUserWorldBloomSupportDeck (userCards: CardDetail[], gameCharacterId: number): UserWorldBloomSupportDeck {
+  public static toUserWorldBloomSupportDeck (userCards: CardDetail[], eventId: number, gameCharacterId: number): UserWorldBloomSupportDeck {
     if (userCards.length > 20) throw new Error('deck card should <= 20')
     return {
       gameCharacterId,
+      eventId,
       member1: userCards.length < 1 ? null : userCards[0].cardId,
       member2: userCards.length < 2 ? null : userCards[1].cardId,
       member3: userCards.length < 3 ? null : userCards[2].cardId,

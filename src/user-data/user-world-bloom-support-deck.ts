@@ -1,5 +1,6 @@
 export interface UserWorldBloomSupportDeck {
   gameCharacterId: number
+  eventId: number
   member1: number | null
   member2: number | null
   member3: number | null
