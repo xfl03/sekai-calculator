@@ -168,19 +168,27 @@ export class BaseDeckRecommend {
     liveType: LiveType,
     eventConfig: EventConfig = {}
   ): Promise<RecommendDeck[]> {
-    const { eventType = EventType.NONE, eventUnit, specialCharacterId, worldBloomType } = eventConfig
+    const { eventType = EventType.NONE, eventUnit, specialCharacterId, worldBloomType, worldBloomSupportUnit } = eventConfig
     const honorBonus = await this.deckCalculator.getHonorBonusPower()
     // 用于计算的卡（主队伍+应援队伍）
     const areaItemLevels = await this.areaItemService.getAreaItemLevels()
     let cards =
         await this.cardCalculator.batchGetCardDetail(userCards, cardConfig, eventConfig, areaItemLevels)
     // 过滤箱活的卡，不上其它组合的
-    // 因为普通箱活的World Link应援队伍只能从当前组合选，这里照样可以过滤不影响结果
-    if (eventUnit !== undefined) {
+    // 因为World Link应援队伍只能从指定组合选，这里照样可以过滤不影响结果
+    let filterUnit = eventUnit
+    if (worldBloomSupportUnit !== undefined) {
+      // World Link活动，无论主卡组还是应援卡组，都要跟着应援角色组合走
+      // 普通World Link活动两者本来就一致，Final为混活（eventUnit为空），此处强制覆盖
+      filterUnit = worldBloomSupportUnit
+    }
+    if (filterUnit !== undefined) {
       const originCardsLength = cards.length
       cards = cards.filter(it =>
-        (it.units.length === 1 && it.units[0] === 'piapro') || it.units.includes(eventUnit))
-      debugLog(`Cards filtered with unit: ${cards.length}/${originCardsLength}`)
+        (it.units.length === 1 && it.units[0] === 'piapro') ||
+          // 因为filterUnit是一个可变量，这里还需要再次判断（实际无效），不然编译会有问题
+          filterUnit === undefined || it.units.includes(filterUnit))
+      debugLog(`Cards filtered with unit ${filterUnit}: ${cards.length}/${originCardsLength}`)
       debugLog(cards.map(it => it.cardId).toString())
     }
     // World Link Finale，需要强制指定Leader
