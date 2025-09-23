@@ -113,7 +113,7 @@ export class EventService {
   }
 
   /**
-   * 获得World Link Finale卡牌技能限制
+   * 获得World Link Finale卡牌技能限制（技能实际加成比例）
    * @param eventId 活动ID
    */
   public async getEventSkillScoreUpLimit (eventId: number): Promise<number> {
@@ -121,7 +121,10 @@ export class EventService {
         await this.dataProvider.getMasterData<EventSkillScoreUpLimit>('eventSkillScoreUpLimits')
     const limit =
         limits.find(it => it.eventId === eventId)
-    return limit?.scoreUpRateLimit ?? Number.MAX_SAFE_INTEGER
+    if (limit === undefined) {
+      return Number.MAX_SAFE_INTEGER
+    }
+    return limit.scoreUpRateLimit - 100
   }
 
   /**
