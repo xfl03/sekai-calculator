@@ -42,18 +42,21 @@ export class EventService {
    */
   public async getEventConfig (eventId: number, specialCharacterId?: number): Promise<EventConfig> {
     const eventType = await this.getEventType(eventId)
+    const isWorldBloom = eventType === EventType.BLOOM
+    const worldBloomType = isWorldBloom ? await this.getWorldBloomType(eventId) : undefined
+    const isWorldBloomFinale = EventService.isWorldBloomFinale(worldBloomType)
     return {
       eventId,
       eventType,
       eventUnit: await this.getEventBonusUnit(eventId),
       specialCharacterId,
-      cardBonusCountLimit: await this.getEventCardBonusCountLimit(eventId),
-      skillScoreUpLimit: await this.getEventSkillScoreUpLimit(eventId),
-      mysekaiFixtureLimit: await this.getMysekaiFixtureLimit(eventId),
+      cardBonusCountLimit: isWorldBloomFinale ? await this.getEventCardBonusCountLimit(eventId) : 5,
+      skillScoreUpLimit: Number.MAX_SAFE_INTEGER, // 此项未实际使用
+      mysekaiFixtureLimit: isWorldBloomFinale ? await this.getMysekaiFixtureLimit(eventId) : Number.MAX_SAFE_INTEGER,
       worldBloomDifferentAttributeBonuses:
-          eventType === EventType.BLOOM ? await this.getWorldBloomDifferentAttributeBonuses() : undefined,
-      worldBloomType: eventType === EventType.BLOOM ? await this.getWorldBloomType(eventId) : undefined,
-      worldBloomSupportUnit: await this.getWorldBloomSupportUnit(specialCharacterId)
+          isWorldBloom ? await this.getWorldBloomDifferentAttributeBonuses() : undefined,
+      worldBloomType,
+      worldBloomSupportUnit: isWorldBloom ? await this.getWorldBloomSupportUnit(specialCharacterId) : undefined
     }
   }
 
@@ -114,6 +117,7 @@ export class EventService {
 
   /**
    * 获得World Link Finale卡牌技能限制（技能实际加成比例）
+   * 此项限制实际没有用上，用修改技能数值的方式做了限制
    * @param eventId 活动ID
    */
   public async getEventSkillScoreUpLimit (eventId: number): Promise<number> {
@@ -124,7 +128,7 @@ export class EventService {
     if (limit === undefined) {
       return Number.MAX_SAFE_INTEGER
     }
-    return limit.scoreUpRateLimit - 100
+    return limit.scoreUpRateLimit
   }
 
   /**
@@ -164,6 +168,14 @@ export class EventService {
     const gameCharacters = await this.dataProvider.getMasterData<GameCharacter>('gameCharacters')
     const gameCharacter = findOrThrow(gameCharacters, it => it.id === specialCharacterId)
     return gameCharacter.unit
+  }
+
+  /**
+   * 判断是否为World Link Final活动
+   * @param worldBloomType World Link类型
+   */
+  public static isWorldBloomFinale (worldBloomType?: string): boolean {
+    return worldBloomType === 'finale'
   }
 }
 
