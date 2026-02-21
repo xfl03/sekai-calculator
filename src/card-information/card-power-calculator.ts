@@ -106,12 +106,20 @@ export class CardPowerCalculator {
 
     const ret = [0, 0, 0]
     // 等级
-    const cardParameters = card.cardParameters
-      .filter(it => it.cardLevel === userCard.level)
-    const params = ['param1', 'param2', 'param3']// cardParameterType的枚举
-    params.forEach((param, i) => {
-      ret[i] = findOrThrow(cardParameters, it => it.cardParameterType === param).power
-    })
+    if (Array.isArray(card.cardParameters)) {
+      // 日服、英服
+      const cardParameters = card.cardParameters
+          .filter(it => it.cardLevel === userCard.level)
+      const params = ['param1', 'param2', 'param3']// cardParameterType的枚举
+      params.forEach((param, i) => {
+        ret[i] = findOrThrow(cardParameters, it => it.cardParameterType === param).power
+      })
+    } else {
+      // 简体服、繁体服、韩服
+      ret[0] += card.cardParameters.param1[userCard.level - 1]
+      ret[1] += card.cardParameters.param2[userCard.level - 1]
+      ret[2] += card.cardParameters.param3[userCard.level - 1]
+    }
     // 觉醒
     if (userCard.specialTrainingStatus === 'done') {
       ret[0] += card.specialTrainingPower1BonusFixed

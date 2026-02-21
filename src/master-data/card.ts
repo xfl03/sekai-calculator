@@ -25,7 +25,11 @@ export interface Card {
     cardLevel: number
     cardParameterType: string
     power: number
-  }>
+  }> | {
+    param1: number[]
+    param2: number[]
+    param3: number[]
+  }
   specialTrainingCosts: Array<{
     cardId: number
     seq: number
