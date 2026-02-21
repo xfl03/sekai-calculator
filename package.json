@@ -1,6 +1,6 @@
 {
   "name": "sekai-calculator",
-  "version": "0.17.10",
+  "version": "0.17.11",
   "description": "Project SEKAI Calculator for deck power, live score, event point and more.",
   "type": "module",
   "types": "dist/index.d.ts",
@@ -40,7 +40,7 @@
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
-    "eslint": "^8.37.0",
+    "eslint": "^9.39.3",
     "eslint-config-standard-with-typescript": "^34.0.1",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-n": "^15.7.0",

@@ -32,9 +32,9 @@ export class LiveExactCalculator {
       effects.push(feverDetail)
     }
     // 全note权重计算
-    const ingameNodes = await this.dataProvider.getMasterData<IngameNote>('ingameNodes')
+    const ingameNotes = await this.dataProvider.getMasterData<IngameNote>('ingameNotes')
     const noteCoefficients = musicScore.notes
-      .map(note => findOrThrow(ingameNodes, it => it.id === note.type).scoreCoefficient)
+      .map(note => findOrThrow(ingameNotes, it => it.id === note.type).scoreCoefficient)
     const coefficientTotal = noteCoefficients.reduce((total, it) => total + it, 0)
     // 单note单独计算
     const ingameCombos = await this.dataProvider.getMasterData<IngameCombo>('ingameCombos')

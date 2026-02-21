@@ -6,14 +6,16 @@ import { type MusicMeta } from '../common/music-meta'
  * 缓存数据，解决数据重复加载问题，支持并行Promise
  */
 export class CachedDataProvider implements DataProvider {
-  public constructor (private readonly dataProvider: DataProvider) {
+  public constructor (private readonly dataProvider: DataProvider, private readonly cacheKeyPrefix: string = '') {
   }
 
   private static readonly globalCache = new Map<string, any>()
   private readonly instanceCache = new Map<string, any>()
   private static readonly runningPromise = new Map<string, Promise<any>>()
 
-  private async getData (cache: Map<string, any>, cacheKey: string, promise: () => Promise<any>): Promise<any> {
+  private async getData (cache: Map<string, any>, originCacheKey: string, promise: () => Promise<any>): Promise<any> {
+    // 为了避免缓存冲突，允许指定缓存前缀
+    const cacheKey = `${this.cacheKeyPrefix}${originCacheKey}`
     // 如果本来就有缓存，不需要通过promise获取数据
     if (cache.has(cacheKey)) return cache.get(cacheKey)
     // 等待之前的promise执行完成
