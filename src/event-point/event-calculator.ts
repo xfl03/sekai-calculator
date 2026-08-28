@@ -142,8 +142,7 @@ export class EventCalculator {
       if (deckCardIds.has(card.cardId)) continue
       bonus += card.supportDeckBonus
       cards.push(card)
-      // 4.5周年之后，支援队伍为20张卡
-      if (cards.length >= 20) break
+      if (cards.length >= 25) break
     }
     // 组满支援队伍或者用完所有卡，就返回
     return { bonus, cards }

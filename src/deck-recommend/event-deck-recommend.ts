@@ -23,7 +23,7 @@ export class EventDeckRecommend {
    * @param specialCharacterId 指定的角色（用于世界开花活动支援卡组）
    */
   public async recommendEventDeck (
-    eventId: number, liveType: LiveType, config: DeckRecommendConfig, specialCharacterId: number = 0
+    eventId: number, liveType: LiveType, config: DeckRecommendConfig, specialCharacterId?: number
   ): Promise<RecommendDeck[]> {
     const eventConfig = await this.eventService.getEventConfig(eventId, specialCharacterId)
     if (eventConfig.eventType === undefined) throw new Error(`Event type not found for ${eventId}`)

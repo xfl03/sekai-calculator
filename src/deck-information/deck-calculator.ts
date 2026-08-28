@@ -39,10 +39,12 @@ export class DeckCalculator {
    * @param honorBonus 称号加成
    * @param cardBonusCountLimit 特定卡牌加成数量限制（用于World Link Finale）
    * @param worldBloomDifferentAttributeBonuses （可选）World Link不同属性加成
+   * @param totalPowerLimit 综合力上限（新 World Bloom 336000）
    */
   public static getDeckDetailByCards (
     cardDetails: CardDetail[], allCards: CardDetail[], honorBonus: number, cardBonusCountLimit?: number,
-    worldBloomDifferentAttributeBonuses?: WorldBloomDifferentAttributeBonus[]
+    worldBloomDifferentAttributeBonuses?: WorldBloomDifferentAttributeBonus[],
+    totalPowerLimit?: number
   ): DeckDetail {
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
     const map = new Map<string, number>()
@@ -78,8 +80,12 @@ export class DeckCalculator {
       it => it.fixtureBonus)
     const gateBonus = DeckCalculator.sumPower(cardDetails, cardPower,
       it => it.gateBonus)
-    const total = DeckCalculator.sumPower(cardDetails, cardPower,
+    let total = DeckCalculator.sumPower(cardDetails, cardPower,
       it => it.total) + honorBonus
+    // World Link 综合力限制（eventTotalPowerLimits）
+    if (totalPowerLimit !== undefined) {
+      total = Math.min(total, totalPowerLimit)
+    }
     const power = {
       base,
       areaItemBonus,
@@ -185,7 +191,8 @@ export class DeckCalculator {
 
     return DeckCalculator.getDeckDetailByCards(
       await this.cardCalculator.batchGetCardDetail(deckCards, {}, eventConfig, areaItemLevels),
-      allCards0, await this.getHonorBonusPower(), eventConfig?.cardBonusCountLimit, eventConfig?.worldBloomDifferentAttributeBonuses)
+      allCards0, await this.getHonorBonusPower(), eventConfig?.cardBonusCountLimit, eventConfig?.worldBloomDifferentAttributeBonuses,
+      eventConfig?.totalPowerLimit)
   }
 }
 

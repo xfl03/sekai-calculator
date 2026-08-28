@@ -2,7 +2,6 @@ export interface Music {
   id: number
   seq: number
   releaseConditionId: number
-  categories: string[]
   title: string
   pronunciation: string
   creator: string

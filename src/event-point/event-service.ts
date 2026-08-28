@@ -11,6 +11,7 @@ import {
 } from '../master-data/event-mysekai-fixture-game-character-performance-bonus-limit'
 import type { GameCharacter } from '../master-data/game-character'
 import { type WorldBloom } from '../master-data/world-bloom'
+import { type EventTotalPowerLimit } from '../master-data/event-total-power-limit'
 
 export class EventService {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -56,7 +57,8 @@ export class EventService {
       worldBloomDifferentAttributeBonuses:
           isWorldBloom ? await this.getWorldBloomDifferentAttributeBonuses() : undefined,
       worldBloomType,
-      worldBloomSupportUnit: isWorldBloom ? await this.getWorldBloomSupportUnit(specialCharacterId) : undefined
+      worldBloomSupportUnit: isWorldBloom ? await this.getWorldBloomSupportUnit(specialCharacterId) : undefined,
+      totalPowerLimit: isWorldBloom ? await this.getEventTotalPowerLimit(eventId) : undefined
     }
   }
 
@@ -171,6 +173,19 @@ export class EventService {
   }
 
   /**
+   * 获得活动综合力上限（World Link限制）
+   * 无限制则返回 undefined
+   * @param eventId 活动ID
+   */
+  public async getEventTotalPowerLimit (eventId: number): Promise<number | undefined> {
+    const limits = await this.dataProvider
+      .getMasterData<EventTotalPowerLimit>('eventTotalPowerLimits')
+      .catch(() => [] as EventTotalPowerLimit[])
+    const limit = limits.find(it => it.eventId === eventId)
+    return limit?.upperTotalPower
+  }
+
+  /**
    * 判断是否为World Link Final活动
    * @param worldBloomType World Link类型
    */
@@ -234,4 +249,9 @@ export interface EventConfig {
    * 支援角色组合，和specialCharacterId保持一致（用于World Link活动）
    */
   worldBloomSupportUnit?: string
+  /**
+   * 综合力上限（World Bloom Shuffle 33.6万，`eventTotalPowerLimits`）
+   * 未配置则为 undefined
+   */
+  totalPowerLimit?: number
 }
