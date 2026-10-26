@@ -1,4 +1,4 @@
-import type { RecommendDeck } from './base-deck-recommend'
+import type { RecommendDeck } from './deck-recommend-type'
 import type { DeckDetail } from '../deck-information/deck-calculator'
 import type { CardDetail } from '../card-information/card-calculator'
 
