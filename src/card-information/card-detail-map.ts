@@ -46,6 +46,13 @@ export class CardDetailMap<T> {
   }
 
   /**
+   * 获得所有情况中的最大值（只用于筛选，不参与实际计算）
+   */
+  public getMaxValue (): number {
+    return this.max
+  }
+
+  /**
    * 是否肯定比另一个范围小
    * 如果几个维度都比其他小，这张卡可以在自动组卡时舍去
    * @param another 另一个范围

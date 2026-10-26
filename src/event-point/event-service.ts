@@ -1,6 +1,6 @@
 import { type DataProvider } from '../data-provider/data-provider'
 import { type Event } from '../master-data/event'
-import { findOrThrow } from '../util/collection-util'
+import { computeWithDefault, findOrThrow } from '../util/collection-util'
 import { type EventDeckBonus } from '../master-data/event-deck-bonus'
 import { type GameCharacterUnit } from '../master-data/game-character-unit'
 import type { WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
@@ -58,7 +58,8 @@ export class EventService {
           isWorldBloom ? await this.getWorldBloomDifferentAttributeBonuses() : undefined,
       worldBloomType,
       worldBloomSupportUnit: isWorldBloom ? await this.getWorldBloomSupportUnit(specialCharacterId) : undefined,
-      totalPowerLimit: isWorldBloom ? await this.getEventTotalPowerLimit(eventId) : undefined
+      totalPowerLimit: isWorldBloom ? await this.getEventTotalPowerLimit(eventId) : undefined,
+      attrIndependentBonus: !isWorldBloom && await this.getEventAttrIndependentBonus(eventId)
     }
   }
 
@@ -97,6 +98,39 @@ export class EventService {
       }
     }
     return undefined
+  }
+
+  /**
+   * 判断活动加成是否与卡牌属性无关（例如 Memories 活动：角色加成对所有属性都相同）
+   * 这类活动没有“同色加成”，组卡时的属性剪枝和优先级筛选都需要特殊处理
+   * @param eventId 活动ID
+   */
+  public async getEventAttrIndependentBonus (eventId: number): Promise<boolean> {
+    const eventDeckBonuses =
+      await this.dataProvider.getMasterData<EventDeckBonus>('eventDeckBonuses')
+    const rows = eventDeckBonuses.filter(it => it.eventId === eventId)
+    // 没有任何加成数据时无法判断，按与属性有关处理
+    if (rows.length === 0) return false
+    // 按角色（或全体）分组，检查每个组在不同属性下的加成是否完全一致
+    const groups = new Map<string, EventDeckBonus[]>()
+    rows.forEach(it => {
+      computeWithDefault(groups, it.gameCharacterUnitId?.toString() ?? 'any',
+        [] as EventDeckBonus[], array => {
+          array.push(it)
+          return array
+        })
+    })
+    for (const group of groups.values()) {
+      const attrRows = group.filter(it => it.cardAttr !== undefined)
+      // 没有属性限定，说明这个组在所有属性下加成都一样
+      if (attrRows.length === 0) continue
+      // 属性加成必须覆盖所有属性，且数值完全一致
+      if (new Set(attrRows.map(it => it.cardAttr)).size !== EventService.CARD_ATTRS.length) return false
+      if (new Set(attrRows.map(it => it.bonusRate)).size > 1) return false
+      // 无属性限定的加成必须和属性加成一致
+      if (group.some(it => it.cardAttr === undefined && it.bonusRate !== attrRows[0].bonusRate)) return false
+    }
+    return true
   }
 
   /**
@@ -186,6 +220,11 @@ export class EventService {
   }
 
   /**
+   * 卡牌的全部属性
+   */
+  private static readonly CARD_ATTRS = ['cute', 'cool', 'pure', 'happy', 'mysterious']
+
+  /**
    * 判断是否为World Link Final活动
    * @param worldBloomType World Link类型
    */
@@ -254,4 +293,9 @@ export interface EventConfig {
    * 未配置则为 undefined
    */
   totalPowerLimit?: number
+  /**
+   * 活动加成是否与卡牌属性无关（例如 Memories 活动）
+   * 为 true 时不存在同色加成，组卡需要按同色以外的规则剪枝
+   */
+  attrIndependentBonus?: boolean
 }
