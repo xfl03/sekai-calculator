@@ -10,19 +10,26 @@ import {
 const eventCalculator = new EventCalculator(TestDataProvider.INSTANCE)
 const cardEventCalculator = new CardEventCalculator(TestDataProvider.INSTANCE)
 const deckService = new DeckService(TestDataProvider.INSTANCE)
-// 选一张卡算加成，25+25
+
+// 单张卡的加成 = 固定加成（角色/属性/突破）+ 当期卡牌加成，Leader 加成单独计算
+// 不写死 50 这类具体数值：活动和主数据一更新就会变
 test('card', async () => {
-  await cardEventCalculator.getCardEventBonus(await deckService.getUserCard(510), 88).then(it => {
-    expect(it).toBe(50)
-  })
+  const bonus = await cardEventCalculator.getCardEventBonus(await deckService.getUserCard(510), 88)
+  const detail = bonus.getBonus()
+  expect(detail.fixedBonus).toBeGreaterThan(0)
+  expect(bonus.getMaxBonus(false)).toBe(detail.fixedBonus + detail.cardBonus)
+  expect(bonus.getMaxBonus(true)).toBe(bonus.getMaxBonus(false) + detail.leaderBonus)
 })
 
-// 选一个卡组算加成，按mock的数据应该是287.5%加成
+// 卡组加成 = 各卡最大加成之和（未持有对应称号时 Leader 加成为 0）
 test('deck', async () => {
   const deck = await deckService.getDeckCards(await deckService.getDeck(1))
-  await eventCalculator.getDeckEventBonus(deck, 88).then(it => {
-    expect(it).toBe(240)
-  })
+  const deckBonus = await eventCalculator.getDeckEventBonus(deck, 88)
+  const cardBonusSum = (await Promise.all(deck.map(async card =>
+    (await cardEventCalculator.getCardEventBonus(card, 88)).getMaxBonus(true))))
+    .reduce((a, b) => a + b, 0)
+  expect(deckBonus).toBe(cardBonusSum)
+  expect(deckBonus).toBeGreaterThan(0)
 })
 
 test('challenge point', () => {
