@@ -1,11 +1,11 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type UserDeck } from '../user-data/user-deck'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { UserDeck } from '../user-data/user-deck'
 import { findOrThrow } from '../util/collection-util'
-import { type UserCard } from '../user-data/user-card'
-import { type UserChallengeLiveSoloDeck } from '../user-data/user-challenge-live-solo-deck'
-import { type DeckCardDetail } from './deck-calculator'
-import { type UserWorldBloomSupportDeck } from '../user-data/user-world-bloom-support-deck'
-import { type CardDetail } from '../card-information/card-calculator'
+import type { UserCard } from '../user-data/user-card'
+import type { UserChallengeLiveSoloDeck } from '../user-data/user-challenge-live-solo-deck'
+import type { DeckCardDetail } from './deck-calculator'
+import type { UserWorldBloomSupportDeck } from '../user-data/user-world-bloom-support-deck'
+import type { CardDetail } from '../card-information/card-calculator'
 
 export class DeckService {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -77,8 +77,9 @@ export class DeckService {
    */
   public async getChallengeLiveSoloDeckCards (deck: UserChallengeLiveSoloDeck): Promise<UserCard[]> {
     const cardIds = [deck.leader, deck.support1, deck.support2, deck.support3, deck.support4]
-    return await Promise.all(cardIds.filter(it => it !== undefined && it !== null)
-      .map(async id => await this.getUserCard(id === null ? 0 : id)))
+    return await Promise.all(cardIds
+      .filter((it): it is number => it !== null)
+      .map(async id => await this.getUserCard(id)))
   }
 
   /**

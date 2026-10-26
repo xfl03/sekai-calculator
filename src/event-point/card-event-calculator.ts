@@ -1,14 +1,14 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type Card } from '../master-data/card'
-import { type EventDeckBonus } from '../master-data/event-deck-bonus'
-import { type GameCharacterUnit } from '../master-data/game-character-unit'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { Card } from '../master-data/card'
+import type { EventDeckBonus } from '../master-data/event-deck-bonus'
+import type { GameCharacterUnit } from '../master-data/game-character-unit'
 import { findOrThrow } from '../util/collection-util'
-import { type UserCard } from '../user-data/user-card'
-import { type EventCard } from '../master-data/event-card'
-import { type EventRarityBonusRate } from '../master-data/event-rarity-bonus-rate'
+import type { UserCard } from '../user-data/user-card'
+import type { EventCard } from '../master-data/event-card'
+import type { EventRarityBonusRate } from '../master-data/event-rarity-bonus-rate'
 import { CardDetailMapEventBonus } from '../card-information/card-detail-map-event-bonus'
 import type { UserHonor } from '../user-data/user-honor'
-import { type EventHonorBonus } from '../master-data/event-honor-bonus'
+import type { EventHonorBonus } from '../master-data/event-honor-bonus'
 
 export class CardEventCalculator {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -68,7 +68,7 @@ export class CardEventCalculator {
     // 计算指定卡牌（正常是当期四星，World Link Finale为当年组合限定四星）加成
     // 为了给World Link Finale做指定卡牌加成上限，要单独加进返回结构，不能简单加算
     const cardBonus0 = eventCards
-      .find((it: any) => it.eventId === eventId && it.cardId === card.id)
+      .find(it => it.eventId === eventId && it.cardId === card.id)
     const cardBonus = cardBonus0?.bonusRate ?? 0
 
     // 处理World Link Finale的Leader活动排名称号加成、Leader卡牌加成（因为和Leader位相关，要单独加进返回结构，不能简单加算）
@@ -107,8 +107,9 @@ export class CardEventCalculator {
     const userHonors = await this.dataProvider.getUserData<UserHonor[]>('userHonors')
     return userHonors
       .map(honor => bonuses.find(it => it.honorId === honor.honorId))
-      .filter(it => it !== undefined)
-      .reduce((p, it) => p + (it?.bonusRate ?? 0), cardLeaderBonus)
+      // TS 5.5 起 filter 能把 undefined 收窄掉，这里不再需要 ?. 和 ?? 0
+      .filter((it): it is EventHonorBonus => it !== undefined)
+      .reduce((p, it) => p + it.bonusRate, cardLeaderBonus)
   }
 }
 

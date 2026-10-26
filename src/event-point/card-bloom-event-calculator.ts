@@ -1,11 +1,11 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type UserCard } from '../user-data/user-card'
-import { type Card } from '../master-data/card'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { UserCard } from '../user-data/user-card'
+import type { Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
-import { type WorldBloomSupportDeckBonus } from '../master-data/world-bloom-support-deck-bonus'
-import { type EventConfig } from './event-service'
-import {
-  type WorldBloomSupportDeckUnitEventLimitedBonus
+import type { WorldBloomSupportDeckBonus } from '../master-data/world-bloom-support-deck-bonus'
+import type { EventConfig } from './event-service'
+import type {
+  WorldBloomSupportDeckUnitEventLimitedBonus
 } from '../master-data/world-bloom-support-deck-unit-event-limited-bonus'
 
 export class CardBloomEventCalculator {

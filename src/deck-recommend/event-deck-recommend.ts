@@ -1,7 +1,7 @@
-import { type DataProvider } from '../data-provider/data-provider'
+import type { DataProvider } from '../data-provider/data-provider'
 import { BaseDeckRecommend, type DeckRecommendConfig, type RecommendDeck } from './base-deck-recommend'
-import { type UserCard } from '../user-data/user-card'
-import { type LiveType } from '../live-score/live-calculator'
+import type { UserCard } from '../user-data/user-card'
+import type { LiveType } from '../live-score/live-calculator'
 import { EventCalculator } from '../event-point/event-calculator'
 import { EventService } from '../event-point/event-service'
 

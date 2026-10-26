@@ -1,8 +1,8 @@
 import type { DataProvider } from '../data-provider/data-provider'
-import { type MusicNoteBase, type MusicScore } from '../common/music-score'
+import type { MusicNoteBase, MusicScore } from '../common/music-score'
 import { LiveCalculator, LiveType } from './live-calculator'
-import { type IngameCombo } from '../master-data/ingame-combo'
-import { type IngameNote } from '../master-data/ingame-note'
+import type { IngameCombo } from '../master-data/ingame-combo'
+import type { IngameNote } from '../master-data/ingame-note'
 import { findOrThrow } from '../util/collection-util'
 
 export class LiveExactCalculator {

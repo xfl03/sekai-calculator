@@ -1,6 +1,6 @@
-import { type DataProvider } from './data-provider'
+import type { DataProvider } from './data-provider'
 import { getOrThrow } from '../util/collection-util'
-import { type MusicMeta } from '../common/music-meta'
+import type { MusicMeta } from '../common/music-meta'
 
 /**
  * 缓存数据，解决数据重复加载问题，支持并行Promise

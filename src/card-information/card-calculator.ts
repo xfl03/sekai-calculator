@@ -1,20 +1,20 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type Card } from '../master-data/card'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
 import { CardPowerCalculator } from './card-power-calculator'
 import { CardSkillCalculator } from './card-skill-calculator'
-import { type UserCard } from '../user-data/user-card'
-import { type AreaItemLevel } from '../master-data/area-item-level'
+import type { UserCard } from '../user-data/user-card'
+import type { AreaItemLevel } from '../master-data/area-item-level'
 import { CardEventCalculator } from '../event-point/card-event-calculator'
 import { AreaItemService } from '../area-item-information/area-item-service'
-import { type EventConfig } from '../event-point/event-service'
+import type { EventConfig } from '../event-point/event-service'
 import { CardBloomEventCalculator } from '../event-point/card-bloom-event-calculator'
 import { CardService } from './card-service'
 import { safeNumber } from '../util/number-util'
 import { type MysekaiGateBonus, MysekaiService } from '../mysekai-information/mysekai-service'
-import { type CardDetailMapPower } from './card-detail-map-power'
-import { type CardDetailMapSkill } from './card-detail-map-skill'
-import { type CardDetailMapEventBonus } from './card-detail-map-event-bonus'
+import type { CardDetailMapPower } from './card-detail-map-power'
+import type { CardDetailMapSkill } from './card-detail-map-skill'
+import type { CardDetailMapEventBonus } from './card-detail-map-event-bonus'
 
 export class CardCalculator {
   private readonly powerCalculator: CardPowerCalculator
@@ -45,7 +45,7 @@ export class CardCalculator {
    * @param userGateBonuses 用户拥有的大门加成
    */
   public async getCardDetail (
-    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig> = {},
+    userCard: UserCard, userAreaItemLevels: AreaItemLevel[], config: Record<string, CardConfig | undefined> = {},
     eventConfig: EventConfig = {}, hasCanvasBonus: boolean, userGateBonuses: MysekaiGateBonus[]
   ): Promise<CardDetail | undefined> {
     const { eventId = 0 } = eventConfig
@@ -102,13 +102,13 @@ export class CardCalculator {
     const userCanvasBonusCards = await this.mysekaiService.getMysekaiCanvasBonusCards()
     const userGateBonuses = await this.mysekaiService.getMysekaiGateBonuses()
     // 每张卡单独计算
-    const ret = await Promise.all(
+    const ret = (await Promise.all(
       userCards.map(async it =>
         await this.getCardDetail(it, areaItemLevels0, config, eventConfig, userCanvasBonusCards.has(it.cardId),
           userGateBonuses))
-    ).then(it => it.filter(it => it !== undefined)) as CardDetail[]
+    )).filter((it): it is CardDetail => it !== undefined)
     // 如果是给World Link活动算的话，allCards一定要按支援加成从大到小排序
-    if (eventConfig?.specialCharacterId !== undefined && eventConfig.specialCharacterId > 0) {
+    if (eventConfig.specialCharacterId !== undefined && eventConfig.specialCharacterId > 0) {
       return ret.sort((a, b) =>
         safeNumber(b.supportDeckBonus) - safeNumber(a.supportDeckBonus))
     }

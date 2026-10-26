@@ -1,12 +1,12 @@
-import { type DataProvider } from '../data-provider/data-provider'
+import type { DataProvider } from '../data-provider/data-provider'
 import { CardCalculator, type CardConfig, type CardDetail } from '../card-information/card-calculator'
 import {
   DeckCalculator,
   type DeckDetail
 } from '../deck-information/deck-calculator'
 import { LiveType } from '../live-score/live-calculator'
-import { type UserCard } from '../user-data/user-card'
-import { type MusicMeta } from '../common/music-meta'
+import type { UserCard } from '../user-data/user-card'
+import type { MusicMeta } from '../common/music-meta'
 import { computeWithDefault, containsAny, swap } from '../util/collection-util'
 import { filterCardPriority } from '../card-priority/card-priority-filter'
 import { isDeckAttrLessThan3, toRecommendDeck, updateDeck } from './deck-result-update'
@@ -288,8 +288,8 @@ export class BaseDeckRecommend {
       const originCardsLength = cards.length
       cards = cards.filter(it =>
         (it.units.length === 1 && it.units[0] === 'piapro') ||
-          // 因为filterUnit是一个可变量，这里还需要再次判断（实际无效），不然编译会有问题
-          filterUnit === undefined || it.units.includes(filterUnit))
+          // filterUnit 在外层已判定非空；TS 5.5 起闭包内也能正确收窄，不必再判一次
+          it.units.includes(filterUnit))
       debugLog(`Cards filtered with unit ${filterUnit}: ${cards.length}/${originCardsLength}`)
       debugLog(cards.map(it => it.cardId).toString())
     }

@@ -1,17 +1,17 @@
-import { type DataProvider } from '../data-provider/data-provider'
+import type { DataProvider } from '../data-provider/data-provider'
 import { CardEventCalculator } from './card-event-calculator'
-import { type UserCard } from '../user-data/user-card'
-import { type CardDetail } from '../card-information/card-calculator'
+import type { UserCard } from '../user-data/user-card'
+import type { CardDetail } from '../card-information/card-calculator'
 import { LiveCalculator, LiveType } from '../live-score/live-calculator'
-import { type MusicMeta } from '../common/music-meta'
-import { type ScoreFunction } from '../deck-recommend/base-deck-recommend'
+import type { MusicMeta } from '../common/music-meta'
+import type { ScoreFunction } from '../deck-recommend/base-deck-recommend'
 import { EventService, EventType } from './event-service'
-import { type DeckDetail } from '../deck-information/deck-calculator'
+import type { DeckDetail } from '../deck-information/deck-calculator'
 import { safeNumber } from '../util/number-util'
-import { type WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
+import type { WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
 import { findOrThrow } from '../util/collection-util'
 import type { CardDetailMapEventBonus } from '../card-information/card-detail-map-event-bonus'
-import { type Card } from '../master-data/card'
+import type { Card } from '../master-data/card'
 
 export class EventCalculator {
   private readonly cardEventCalculator: CardEventCalculator
@@ -63,8 +63,8 @@ export class EventCalculator {
     const otherScore0 = otherScore === 0 ? 4 * selfScore : otherScore
 
     // switch里面不能声明变量，放在外面
-    let baseScore = 0
-    let lifeRate = 0
+    let baseScore: number
+    let lifeRate: number
     switch (liveType) {
       case LiveType.SOLO:
       case LiveType.AUTO:

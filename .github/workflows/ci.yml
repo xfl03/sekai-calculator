@@ -1,0 +1,66 @@
+# CI：每次 push（含 tag）和 PR 都必须通过 lint + 编译 + 测试
+#
+# 数据策略：线上永远用最新主数据，所以这里每次现拉，不做版本锁定。
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# 同一分支上的旧运行被新提交取消；tag 运行不取消（release 要等它的结果）
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+
+env:
+  # 测试实际只读取这 23 个主数据表；全量仓库 379MB 且每天更新，没必要整仓库拉
+  MASTER_DB_FILES: >-
+    areaItemLevels areaItems areas cardEpisodes cardRarities cards characterRanks
+    eventCards eventDeckBonuses eventHonorBonuses eventRarityBonusRates eventTotalPowerLimits
+    events gameCharacterUnits gameCharacters honors masterLessons shopItems skills
+    worldBloomDifferentAttributeBonuses worldBloomSupportDeckBonuses
+    worldBloomSupportDeckUnitEventLimitedBonuses worldBlooms
+
+jobs:
+  check:
+    name: lint + build + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm 版本由 package.json 的 packageManager 字段决定（8.10.0）
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # lint 和 build 不依赖主数据，放在拉数据之前，出错时能更快失败
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Fetch latest master data
+        run: |
+          mkdir -p sekai-master-db-diff
+          for f in $MASTER_DB_FILES; do
+            curl -fsSL "https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/main/$f.json" \
+              -o "sekai-master-db-diff/$f.json"
+          done
+
+      - name: Fetch latest music metas
+        run: curl -fsSL https://storage.sekai.best/sekai-best-assets/music_metas.json -o music_metas.json
+
+      - name: Generate mock user data
+        run: node script/gen-mock-user-data.cjs
+
+      - name: Test
+        run: npx jest --coverage=false --runInBand

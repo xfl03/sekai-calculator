@@ -1,9 +1,9 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type UserArea } from '../user-data/user-area'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { UserArea } from '../user-data/user-area'
 import { findOrThrow } from '../util/collection-util'
-import { type AreaItemLevel } from '../master-data/area-item-level'
-import { type AreaItem } from '../master-data/area-item'
-import { type ShopItem } from '../master-data/shop-item'
+import type { AreaItemLevel } from '../master-data/area-item-level'
+import type { AreaItem } from '../master-data/area-item'
+import type { ShopItem } from '../master-data/shop-item'
 
 export class AreaItemService {
   public constructor (private readonly dataProvider: DataProvider) {

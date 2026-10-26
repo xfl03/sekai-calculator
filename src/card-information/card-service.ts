@@ -1,10 +1,10 @@
-import { type Card } from '../master-data/card'
-import { type GameCharacter } from '../master-data/game-character'
+import type { Card } from '../master-data/card'
+import type { GameCharacter } from '../master-data/game-character'
 import { findOrThrow } from '../util/collection-util'
-import { type UserCard } from '../user-data/user-card'
-import { type CardRarity } from '../master-data/card-rarity'
-import { type CardConfig } from './card-calculator'
-import { type DataProvider } from '../data-provider/data-provider'
+import type { UserCard } from '../user-data/user-card'
+import type { CardRarity } from '../master-data/card-rarity'
+import type { CardConfig } from './card-calculator'
+import type { DataProvider } from '../data-provider/data-provider'
 
 export class CardService {
   public constructor (private readonly dataProvider: DataProvider) {

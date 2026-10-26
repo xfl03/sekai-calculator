@@ -4,12 +4,12 @@ export interface Event {
   name: string
   assetbundleName: string
   bgmAssetbundleName: string
-  startAt: any
-  aggregateAt: any
-  rankingAnnounceAt: any
-  distributionStartAt: any
-  closedAt: any
-  distributionEndAt: any
+  startAt: number
+  aggregateAt: number
+  rankingAnnounceAt: number
+  distributionStartAt: number
+  closedAt: number
+  distributionEndAt: number
   virtualLiveId: number
   eventRankingRewardRanges: Array<{
     id: number

@@ -1,8 +1,8 @@
-import { type DataProvider } from '../data-provider/data-provider'
+import type { DataProvider } from '../data-provider/data-provider'
 import { findOrThrow } from '../util/collection-util'
 import { BaseDeckRecommend, type DeckRecommendConfig, type RecommendDeck } from './base-deck-recommend'
-import { type UserCard } from '../user-data/user-card'
-import { type Card } from '../master-data/card'
+import type { UserCard } from '../user-data/user-card'
+import type { Card } from '../master-data/card'
 import { LiveCalculator, LiveType } from '../live-score/live-calculator'
 
 export class ChallengeLiveDeckRecommend {

@@ -1,4 +1,4 @@
-import { type CardPriority } from './card-priority-filter'
+import type { CardPriority } from './card-priority-filter'
 
 /**
  * 卡牌稀有度顺序，用于World Link

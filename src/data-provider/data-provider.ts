@@ -1,4 +1,4 @@
-import { type MusicMeta } from '../common/music-meta'
+import type { MusicMeta } from '../common/music-meta'
 
 /**
  * 数据获取接口

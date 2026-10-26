@@ -1,18 +1,18 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type UserCard } from '../user-data/user-card'
-import { type Card } from '../master-data/card'
-import { type CardEpisode } from '../master-data/card-episode'
-import { type MasterLesson } from '../master-data/master-lesson'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { UserCard } from '../user-data/user-card'
+import type { Card } from '../master-data/card'
+import type { CardEpisode } from '../master-data/card-episode'
+import type { MasterLesson } from '../master-data/master-lesson'
 import { findOrThrow } from '../util/collection-util'
-import { type AreaItemLevel } from '../master-data/area-item-level'
-import { type CharacterRank } from '../master-data/character-rank'
-import { type UserCharacter } from '../user-data/user-character'
-import { type DeckCardPowerDetail } from '../deck-information/deck-calculator'
-import { type CardMysekaiCanvasBonus } from '../master-data/card-mysekai-canvas-bonus'
+import type { AreaItemLevel } from '../master-data/area-item-level'
+import type { CharacterRank } from '../master-data/character-rank'
+import type { UserCharacter } from '../user-data/user-character'
+import type { DeckCardPowerDetail } from '../deck-information/deck-calculator'
+import type { CardMysekaiCanvasBonus } from '../master-data/card-mysekai-canvas-bonus'
 import type {
   UserMysekaiFixtureGameCharacterPerformanceBonus
 } from '../user-data/user-mysekai-fixture-game-character-performance-bonus'
-import { type MysekaiGateBonus } from '../mysekai-information/mysekai-service'
+import type { MysekaiGateBonus } from '../mysekai-information/mysekai-service'
 import { CardDetailMapPower } from './card-detail-map-power'
 
 export class CardPowerCalculator {
@@ -38,14 +38,14 @@ export class CardPowerCalculator {
     const basePower = await this.getCardBasePowers(userCard, card, hasCanvasBonus)
     const characterBonus = await this.getCharacterBonusPower(basePower, card.characterId)
     const fixtureBonus = await this.getFixtureBonusPower(basePower, card.characterId, mysekaiFixtureLimit)
-    const gateBonus = await this.getGateBonusPower(basePower, userGateBonuses, cardUnits)
+    const gateBonus = this.getGateBonusPower(basePower, userGateBonuses, cardUnits)
     // 处理区域道具，卡牌的每个组合都需要单独计算
     for (const unit of cardUnits) {
       // 是否相同组合、是否相同属性，计算4种情况
       for (let i = 0; i < 4; ++i) {
         const sameUnit = (i & 1) === 1
         const sameAttr = (i & 2) === 2
-        const power = await this.getPower(
+        const power = this.getPower(
           card, basePower, characterBonus, fixtureBonus, gateBonus,
           userAreaItemLevels, unit, sameUnit, sameAttr)
         ret.setPower(unit, sameUnit, sameAttr, power)
@@ -68,13 +68,13 @@ export class CardPowerCalculator {
    * @param sameAttr 是否同色
    * @private
    */
-  private async getPower (
+  private getPower (
     card: Card, basePower: number[], characterBonus: number,
     fixtureBonus: number, gateBonus: number,
     userAreaItemLevels: AreaItemLevel[], unit: string, sameUnit: boolean, sameAttr: boolean
-  ): Promise<DeckCardPowerDetail> {
+  ): DeckCardPowerDetail {
     const base = CardPowerCalculator.sumPower(basePower)
-    const areaItemBonus = await this.getAreaItemBonusPower(
+    const areaItemBonus = this.getAreaItemBonusPower(
       userAreaItemLevels, basePower, card.characterId, unit, sameUnit, card.attr, sameAttr)
     return {
       base,
@@ -100,8 +100,8 @@ export class CardPowerCalculator {
       cardEpisodes,
       masterLessons
     ] = await Promise.all([
-      await this.dataProvider.getMasterData<CardEpisode>('cardEpisodes'),
-      await this.dataProvider.getMasterData<MasterLesson>('masterLessons')
+      this.dataProvider.getMasterData<CardEpisode>('cardEpisodes'),
+      this.dataProvider.getMasterData<MasterLesson>('masterLessons')
     ])
 
     const ret = [0, 0, 0]
@@ -109,7 +109,7 @@ export class CardPowerCalculator {
     if (Array.isArray(card.cardParameters)) {
       // 日服、英服
       const cardParameters = card.cardParameters
-          .filter(it => it.cardLevel === userCard.level)
+        .filter(it => it.cardLevel === userCard.level)
       const params = ['param1', 'param2', 'param3']// cardParameterType的枚举
       params.forEach((param, i) => {
         ret[i] = findOrThrow(cardParameters, it => it.cardParameterType === param).power
@@ -139,7 +139,7 @@ export class CardPowerCalculator {
     }
     // 突破
     const usedMasterLessons = masterLessons
-      .filter((it: any) => it.cardRarityType === card.cardRarityType && it.masterRank <= userCard.masterRank)
+      .filter(it => it.cardRarityType === card.cardRarityType && it.masterRank <= userCard.masterRank)
     for (const masterLesson of usedMasterLessons) {
       ret[0] += masterLesson.power1BonusFixed
       ret[1] += masterLesson.power2BonusFixed
@@ -167,10 +167,10 @@ export class CardPowerCalculator {
    * @param sameAttr 是否同属性
    * @private
    */
-  private async getAreaItemBonusPower (
+  private getAreaItemBonusPower (
     userAreaItemLevels: AreaItemLevel[], basePower: number[],
     characterId: number, unit: string, sameUnit: boolean, attr: string, sameAttr: boolean
-  ): Promise<number> {
+  ): number {
     // 筛选可以使用的区域道具
     const usedAreaItems = userAreaItemLevels.filter(it =>
       (it.targetUnit === 'any' || it.targetUnit === unit) &&
@@ -231,9 +231,9 @@ export class CardPowerCalculator {
     basePower: number[], characterId: number, mysekaiFixtureLimit: number = Number.MAX_SAFE_INTEGER
   ): Promise<number> {
     const userFixtureBonuses =
-        await this.dataProvider.getUserData<UserMysekaiFixtureGameCharacterPerformanceBonus[]>(
+        await this.dataProvider.getUserData<UserMysekaiFixtureGameCharacterPerformanceBonus[] | undefined>(
           'userMysekaiFixtureGameCharacterPerformanceBonuses')
-    if (userFixtureBonuses === undefined || userFixtureBonuses === null || userFixtureBonuses.length === 0) {
+    if (userFixtureBonuses === undefined || userFixtureBonuses.length === 0) {
       return 0
     }
 
@@ -259,9 +259,9 @@ export class CardPowerCalculator {
    * @param userGateBonuses 当前生效的门加成
    * @param cardUnits 当前卡有的组合
    */
-  private async getGateBonusPower (
+  private getGateBonusPower (
     basePower: number[], userGateBonuses: MysekaiGateBonus[], cardUnits: string[]
-  ): Promise<number> {
+  ): number {
     // 因为没有专门的V家加成，需要特殊判定无应援的V家角色
     const isOnlyPiapro = cardUnits.length === 1 && cardUnits[0] === 'piapro'
     // 找到可以使用的最高加成

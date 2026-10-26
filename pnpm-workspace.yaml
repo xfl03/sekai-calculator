@@ -1,0 +1,14 @@
+# pnpm 10+ 的配置放在这里（package.json 里的 "pnpm" 字段已不再被读取）。
+
+# 供应链策略：不立即采用「刚发布」的版本，给投毒包被发现留出时间窗。
+# 升级依赖时若撞上 minimumReleaseAge 相关的报错，说明目标版本发布还不到 24 小时：
+# 要么等一天，要么在 minimumReleaseAgeExclude 里显式豁免（pnpm 会自动帮你写）。
+minimumReleaseAge: 1440
+
+# 这两个包带原生构建脚本，pnpm 默认会拦下不让执行：
+#   @parcel/watcher —— jest 的 watch 模式用
+#   unrs-resolver   —— 模块解析用的 napi 包
+# 两者在主流平台都有预编译产物，放行只是为了在缺预编译时能自己构建。
+allowBuilds:
+  '@parcel/watcher': true
+  unrs-resolver: true

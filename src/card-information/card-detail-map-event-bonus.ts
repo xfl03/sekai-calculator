@@ -1,5 +1,5 @@
 import { CardDetailMap } from './card-detail-map'
-import { type CardEventBonusDetail } from '../event-point/card-event-calculator'
+import type { CardEventBonusDetail } from '../event-point/card-event-calculator'
 
 export class CardDetailMapEventBonus extends CardDetailMap<CardEventBonusDetail> {
   private bonus?: CardEventBonusDetail = undefined

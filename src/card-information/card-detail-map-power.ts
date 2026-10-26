@@ -1,5 +1,5 @@
 import { CardDetailMap } from './card-detail-map'
-import { type DeckCardPowerDetail } from '../deck-information/deck-calculator'
+import type { DeckCardPowerDetail } from '../deck-information/deck-calculator'
 
 export class CardDetailMapPower extends CardDetailMap<DeckCardPowerDetail> {
   /**

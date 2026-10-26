@@ -1,0 +1,88 @@
+# 发布：打 tag 后只做「校验 CI 结果 → 编译 → 发布」，不重复跑测试。
+#
+# 为什么不直接用 workflow_run 依赖 CI 工作流：workflow_run 对 tag push 不触发
+# （只对分支 push 触发），所以这里改成在 tag push 时反查同一个 commit 的 CI 结果，
+# 等它跑完并要求结论为 success，否则整条发布链直接失败。
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  verify:
+    name: CI must be green for this commit
+    if: github.repository == 'xfl03/sekai-calculator'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI to succeed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 40); do
+            run=$(gh run list --repo "$REPO" --workflow ci.yml --commit "$SHA" --limit 1 \
+              --json status,conclusion 2>/dev/null || echo '[]')
+            status=$(echo "$run" | jq -r '.[0].status // "none"')
+            conclusion=$(echo "$run" | jq -r '.[0].conclusion // "none"')
+            echo "attempt $i: status=$status conclusion=$conclusion"
+            if [ "$status" = "completed" ]; then
+              if [ "$conclusion" = "success" ]; then
+                echo "CI passed for $SHA"
+                exit 0
+              fi
+              echo "::error::CI for $SHA finished with '$conclusion', refusing to publish"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::Timed out waiting for CI of $SHA (did you push the commit to a branch first?)"
+          exit 1
+
+  publish:
+    name: Build and publish to npm
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # tag 和 package.json 版本必须一致，否则发出去的版本号会和 tag 对不上
+      - name: Check version matches tag
+        run: |
+          set -euo pipefail
+          tag_version="${GITHUB_REF_NAME#v}"
+          pkg_version=$(node -p "require('./package.json').version")
+          echo "tag=$tag_version package.json=$pkg_version"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $pkg_version"
+            exit 1
+          fi
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

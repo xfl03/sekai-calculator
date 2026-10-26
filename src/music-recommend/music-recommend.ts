@@ -1,6 +1,6 @@
-import { type DataProvider } from '../data-provider/data-provider'
+import type { DataProvider } from '../data-provider/data-provider'
 import { LiveCalculator, LiveType } from '../live-score/live-calculator'
-import { type MusicMeta } from '../common/music-meta'
+import type { MusicMeta } from '../common/music-meta'
 import { DeckCalculator, type DeckDetail } from '../deck-information/deck-calculator'
 import { EventCalculator } from '../event-point/event-calculator'
 import { EventType } from '../event-point/event-service'

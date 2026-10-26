@@ -1,14 +1,14 @@
-import { type DataProvider } from '../data-provider/data-provider'
+import type { DataProvider } from '../data-provider/data-provider'
 import {
   DeckCalculator,
   type DeckDetail,
   type DeckCardDetail,
   type DeckCardSkillDetail
 } from '../deck-information/deck-calculator'
-import { type UserCard } from '../user-data/user-card'
-import { type MusicMeta } from '../common/music-meta'
+import type { UserCard } from '../user-data/user-card'
+import type { MusicMeta } from '../common/music-meta'
 import { duplicateObj, findOrThrow } from '../util/collection-util'
-import { type ScoreFunction } from '../deck-recommend/base-deck-recommend'
+import type { ScoreFunction } from '../deck-recommend/base-deck-recommend'
 import { EventService } from '../event-point/event-service'
 
 export class LiveCalculator {

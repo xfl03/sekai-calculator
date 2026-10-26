@@ -1,8 +1,8 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type UserCard } from '../user-data/user-card'
-import { type Card } from '../master-data/card'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { UserCard } from '../user-data/user-card'
+import type { Card } from '../master-data/card'
 import { findOrThrow } from '../util/collection-util'
-import { type Skill } from '../master-data/skill'
+import type { Skill } from '../master-data/skill'
 import type { UserCharacter } from '../user-data/user-character'
 import { CardDetailMapSkill } from './card-detail-map-skill'
 

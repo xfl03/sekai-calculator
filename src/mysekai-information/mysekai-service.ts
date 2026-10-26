@@ -1,12 +1,12 @@
 import type { DataProvider } from '../data-provider/data-provider'
-import { type UserMysekaiCanvas } from '../user-data/user-mysekai-canvas'
-import {
-  type UserMysekaiFixtureGameCharacterPerformanceBonus
+import type { UserMysekaiCanvas } from '../user-data/user-mysekai-canvas'
+import type {
+  UserMysekaiFixtureGameCharacterPerformanceBonus
 } from '../user-data/user-mysekai-fixture-game-character-performance-bonus'
-import { type MysekaiGateLevel } from '../master-data/mysekai-gate-level'
-import { type UserMysekaiGate } from '../user-data/user-mysekai-gate'
+import type { MysekaiGateLevel } from '../master-data/mysekai-gate-level'
+import type { UserMysekaiGate } from '../user-data/user-mysekai-gate'
 import { findOrThrow } from '../util/collection-util'
-import { type MysekaiGate } from '../master-data/mysekai-gate'
+import type { MysekaiGate } from '../master-data/mysekai-gate'
 
 export class MysekaiService {
   public constructor (private readonly dataProvider: DataProvider) {
@@ -18,8 +18,9 @@ export class MysekaiService {
    * 计算逻辑：根据稀有度确定固定加成，不享受区域道具、角色等级加成，享受家具、大门加成
    */
   public async getMysekaiCanvasBonusCards (): Promise<Set<number>> {
-    const userMysekaiCanvas = await this.dataProvider.getUserData<UserMysekaiCanvas[]>('userMysekaiCanvases')
-    if (userMysekaiCanvas === undefined || userMysekaiCanvas === null) {
+    const userMysekaiCanvas =
+        await this.dataProvider.getUserData<UserMysekaiCanvas[] | undefined>('userMysekaiCanvases')
+    if (userMysekaiCanvas === undefined) {
       return new Set<number>()
     }
     return new Set(userMysekaiCanvas.map(it => it.cardId)) // 加强检索性能
@@ -40,8 +41,8 @@ export class MysekaiService {
    * 计算逻辑：原创角色看组合；如果V有支援组合，看支援组合；如果V没有支援组合，取加成最大值
    */
   public async getMysekaiGateBonuses (): Promise<MysekaiGateBonus[]> {
-    const userMysekaiGates = await this.dataProvider.getUserData<UserMysekaiGate[]>('userMysekaiGates')
-    if (userMysekaiGates === undefined || userMysekaiGates === null || userMysekaiGates.length === 0) {
+    const userMysekaiGates = await this.dataProvider.getUserData<UserMysekaiGate[] | undefined>('userMysekaiGates')
+    if (userMysekaiGates === undefined || userMysekaiGates.length === 0) {
       return []
     }
     const mysekaiGates =

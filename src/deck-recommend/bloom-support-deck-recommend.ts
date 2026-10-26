@@ -1,6 +1,6 @@
-import { type DataProvider } from '../data-provider/data-provider'
+import type { DataProvider } from '../data-provider/data-provider'
 import { CardCalculator, type CardDetail } from '../card-information/card-calculator'
-import { type UserCard } from '../user-data/user-card'
+import type { UserCard } from '../user-data/user-card'
 import { EventCalculator } from '../event-point/event-calculator'
 import { EventService } from '../event-point/event-service'
 

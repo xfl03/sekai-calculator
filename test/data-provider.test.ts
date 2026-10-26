@@ -1,7 +1,8 @@
 import { type DataProvider, type MusicMeta, CachedDataProvider } from '../src'
 import { readFileSync } from 'fs'
 
-const USE_LOCAL_JSON = true
+// 默认读本地文件（CI 会在测试前把最新主数据拉到本地），设为 false 时改为直连远端
+const USE_LOCAL_JSON = process.env.USE_LOCAL_JSON !== 'false'
 
 // 用于测试的用户数据
 const mockUserData = JSON.parse(readFileSync('mock-user-data.json', 'utf8'))

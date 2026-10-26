@@ -1,6 +1,6 @@
-import { type RecommendDeck } from './base-deck-recommend'
+import type { RecommendDeck } from './base-deck-recommend'
 import type { DeckDetail } from '../deck-information/deck-calculator'
-import { type CardDetail } from '../card-information/card-calculator'
+import type { CardDetail } from '../card-information/card-calculator'
 
 /**
  * 按分数倒序、综合倒序、C位CardID正序的顺序排序推荐卡组

@@ -1,17 +1,17 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type Event } from '../master-data/event'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { Event } from '../master-data/event'
 import { computeWithDefault, findOrThrow } from '../util/collection-util'
-import { type EventDeckBonus } from '../master-data/event-deck-bonus'
-import { type GameCharacterUnit } from '../master-data/game-character-unit'
+import type { EventDeckBonus } from '../master-data/event-deck-bonus'
+import type { GameCharacterUnit } from '../master-data/game-character-unit'
 import type { WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
-import { type EventCardBonusLimit } from '../master-data/event-card-bonus-limit'
+import type { EventCardBonusLimit } from '../master-data/event-card-bonus-limit'
 import type { EventSkillScoreUpLimit } from '../master-data/event-skill-score-up-limit'
-import {
-  type EventMysekaiFixtureGameCharacterPerformanceBonusLimit
+import type {
+  EventMysekaiFixtureGameCharacterPerformanceBonusLimit
 } from '../master-data/event-mysekai-fixture-game-character-performance-bonus-limit'
 import type { GameCharacter } from '../master-data/game-character'
-import { type WorldBloom } from '../master-data/world-bloom'
-import { type EventTotalPowerLimit } from '../master-data/event-total-power-limit'
+import type { WorldBloom } from '../master-data/world-bloom'
+import type { EventTotalPowerLimit } from '../master-data/event-total-power-limit'
 
 export class EventService {
   public constructor (private readonly dataProvider: DataProvider) {

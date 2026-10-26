@@ -1,11 +1,11 @@
-import { type DataProvider } from '../data-provider/data-provider'
-import { type UserCard } from '../user-data/user-card'
-import { type AreaItemLevel } from '../master-data/area-item-level'
-import { type ShopItem } from '../master-data/shop-item'
+import type { DataProvider } from '../data-provider/data-provider'
+import type { UserCard } from '../user-data/user-card'
+import type { AreaItemLevel } from '../master-data/area-item-level'
+import type { ShopItem } from '../master-data/shop-item'
 import { findOrThrow } from '../util/collection-util'
 import { AreaItemService } from '../area-item-information/area-item-service'
-import { type Area } from '../master-data/area'
-import { type AreaItem } from '../master-data/area-item'
+import type { Area } from '../master-data/area'
+import type { AreaItem } from '../master-data/area-item'
 import { DeckCalculator } from '../deck-information/deck-calculator'
 
 export class AreaItemRecommend {

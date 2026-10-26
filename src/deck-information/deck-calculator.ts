@@ -1,12 +1,12 @@
-import { type DataProvider } from '../data-provider/data-provider'
+import type { DataProvider } from '../data-provider/data-provider'
 import type { UserCard } from '../user-data/user-card'
-import { type UserHonor } from '../user-data/user-honor'
-import { type Honor } from '../master-data/honor'
+import type { UserHonor } from '../user-data/user-honor'
+import type { Honor } from '../master-data/honor'
 import { CardCalculator, type CardDetail } from '../card-information/card-calculator'
 import { computeWithDefault, findOrThrow, getOrThrow } from '../util/collection-util'
 import { EventCalculator } from '../event-point/event-calculator'
-import { type AreaItemLevel } from '../master-data/area-item-level'
-import { type EventConfig } from '../event-point/event-service'
+import type { AreaItemLevel } from '../master-data/area-item-level'
+import type { EventConfig } from '../event-point/event-service'
 import type { WorldBloomDifferentAttributeBonus } from '../master-data/world-bloom-different-attribute-bonus'
 
 export class DeckCalculator {

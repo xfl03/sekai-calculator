@@ -15,7 +15,8 @@ export default [
       }
     ],
     plugins: [
-      typescript()
+      // @rollup/plugin-typescript v12 要求 declarationDir 位于输出文件所在目录内
+      typescript({ declarationDir: 'dist/dts' })
     ]
   },
   {

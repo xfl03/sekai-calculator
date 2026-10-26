@@ -1,7 +1,10 @@
 export interface MusicScore {
   notes: MusicNote[]
   skills: MusicNoteBase[]
-  fevers: MusicNoteBase[]
+  /**
+   * Fever 区间，Long 歌曲没有 Fever
+   */
+  fevers?: MusicNoteBase[]
 }
 
 export interface MusicNoteBase {

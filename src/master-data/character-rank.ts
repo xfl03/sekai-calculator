@@ -1,4 +1,4 @@
-import { type CommonResource } from '../common/resource'
+import type { CommonResource } from '../common/resource'
 
 export interface CharacterRank {
   id: number
