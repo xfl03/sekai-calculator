@@ -29,12 +29,12 @@ jobs:
     name: lint + build + test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # pnpm 版本由 package.json 的 packageManager 字段决定（8.10.0）
-      - uses: pnpm/action-setup@v4
+      # pnpm 版本由 package.json 的 packageManager 字段决定（12.15.0）
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
@@ -63,4 +63,4 @@ jobs:
         run: node script/gen-mock-user-data.cjs
 
       - name: Test
-        run: npx jest --coverage=false --runInBand
+        run: pnpm exec jest --coverage=false --runInBand

@@ -1,5 +1,12 @@
 # 发布：打 tag 后只做「校验 CI 结果 → 编译 → 发布」，不重复跑测试。
 #
+# 认证用的是 npm Trusted Publishing（OIDC），仓库里不存任何 npm token：
+#   · npm 靠 id-token: write 换一张只对本次运行有效的短票
+#   · 前提：npmjs.com 上该包的 Trusted Publisher 填的是本仓库 + release.yml
+#     （文件名要一字不差）+ environment 名（和下面 publish 作业里的 environment 对应）
+#   · 所以这里绝不能设 registry-url 或 NODE_AUTH_TOKEN —— 静态凭据会抢先并被优先使用，
+#     结果是 OIDC 换票走不到，报 ENEEDAUTH
+#
 # 为什么不直接用 workflow_run 依赖 CI 工作流：workflow_run 对 tag push 不触发
 # （只对分支 push 触发），所以这里改成在 tag push 时反查同一个 commit 的 CI 结果，
 # 等它跑完并要求结论为 success，否则整条发布链直接失败。
@@ -15,7 +22,7 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write # npm provenance
+  id-token: write # npm Trusted Publishing（OIDC）换票用，别删
 
 jobs:
   verify:
@@ -53,19 +60,29 @@ jobs:
     name: Build and publish to npm
     needs: verify
     runs-on: ubuntu-latest
+    # 这个环境名必须和 npmjs.com 上 Trusted Publisher 配置里填的名字一致（没填就得删掉这行）
     environment: npm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: pnpm
-          registry-url: https://registry.npmjs.org
+          # 刻意不设 registry-url、不设 cache：
+          #   registry-url 会往 .npmrc 写一行 _authToken=${NODE_AUTH_TOKEN}，
+          #   而 npm 会优先用这行静态凭据，把 OIDC 换票流程盖掉；
+          #   发布作业不缓存依赖，避免缓存投毒（npm 官方示例也这么建议）。
+          package-manager-cache: false
 
       - run: pnpm install --frozen-lockfile
+
+      # Trusted Publishing 需要 npm >= 11.5.1，runner 自带的版本不保证够新
+      - name: Ensure npm supports OIDC
+        run: |
+          npm install -g npm@^11.15.0
+          echo "npm $(npm --version)"
 
       # tag 和 package.json 版本必须一致，否则发出去的版本号会和 tag 对不上
       - name: Check version matches tag
@@ -82,7 +99,6 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Trusted Publishing（OIDC）：不注入任何 token，npm 自己在 id-token: write 下换票
       - name: Publish
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
