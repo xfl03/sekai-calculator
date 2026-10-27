@@ -5,7 +5,6 @@ import type {
 } from '../user-data/user-mysekai-fixture-game-character-performance-bonus'
 import type { MysekaiGateLevel } from '../master-data/mysekai-gate-level'
 import type { UserMysekaiGate } from '../user-data/user-mysekai-gate'
-import { findOrThrow } from '../util/collection-util'
 import type { MysekaiGate } from '../master-data/mysekai-gate'
 
 export class MysekaiService {
@@ -49,15 +48,23 @@ export class MysekaiService {
         await this.dataProvider.getMasterData<MysekaiGate>('mysekaiGates')
     const mysekaiGateLevels =
         await this.dataProvider.getMasterData<MysekaiGateLevel>('mysekaiGateLevels')
-    return userMysekaiGates.map(it => {
-      const gate = findOrThrow(mysekaiGates, g => g.id === it.mysekaiGateId)
-      const level = findOrThrow(mysekaiGateLevels,
-        l => l.mysekaiGateId === it.mysekaiGateId && l.level === it.mysekaiGateLevel)
-      return {
-        unit: gate.unit,
-        powerBonusRate: level.powerBonusRate
-      }
-    })
+    return userMysekaiGates
+      .map(it => {
+        const gate = mysekaiGates.find(g => g.id === it.mysekaiGateId)
+        const level = mysekaiGateLevels.find(l =>
+          l.mysekaiGateId === it.mysekaiGateId && l.level === it.mysekaiGateLevel)
+        // 新增大门（例如 shuffle 门）在上游 Master Data 里可能还没有等级数据，
+        // 或者 Master Data 版本落后于用户数据
+        // 此时跳过该大门，避免查表失败导致整个组卡计算抛错
+        if (gate === undefined || level === undefined) {
+          return undefined
+        }
+        return {
+          unit: gate.unit,
+          powerBonusRate: level.powerBonusRate
+        }
+      })
+      .filter((it): it is MysekaiGateBonus => it !== undefined)
   }
 }
 
