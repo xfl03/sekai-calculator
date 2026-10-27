@@ -82,5 +82,6 @@ test('mysekai gate with real master data', async () => {
     }
   }
   const service = new MysekaiService(dataProvider)
-  expect(await service.getMysekaiGateBonuses()).toEqual([{ unit: 'light_sound', powerBonusRate: 7 }])
+  // 用 toContainEqual 而不是 toEqual：上游补上 shuffle 门的等级数据后，结果会多一条而不会失败
+  expect(await service.getMysekaiGateBonuses()).toContainEqual({ unit: 'light_sound', powerBonusRate: 7 })
 })

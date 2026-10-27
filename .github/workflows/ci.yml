@@ -20,17 +20,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # 测试实际只读取这 26 个主数据表；全量仓库 379MB 且每天更新，没必要整仓库拉
-  MASTER_DB_FILES: >-
-    areaItemLevels areaItems areas cardEpisodes cardRarities cards characterRanks
-    eventCardBonusLimits eventCards eventDeckBonuses eventHonorBonuses eventRarityBonusRates
-    eventSkillScoreUpLimits eventTotalPowerLimits
-    eventMysekaiFixtureGameCharacterPerformanceBonusLimits
-    events gameCharacterUnits gameCharacters honors masterLessons shopItems skills
-    worldBloomDifferentAttributeBonuses worldBloomSupportDeckBonuses
-    worldBloomSupportDeckUnitEventLimitedBonuses worldBlooms
-
 jobs:
   check:
     name: lint + build + test
@@ -46,6 +35,12 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      # 清单由 src/ 推导，先算清单再拉数据：清单不完整就不可能开始下载
+      # 这一步只读源码，不依赖 node_modules，所以放在 install 之前，出错最快失败
+      - name: List master data tables
+        id: tables
+        run: echo "list=$(node script/master-db-files.cjs)" >> "$GITHUB_OUTPUT"
+
       - run: pnpm install --frozen-lockfile
 
       # lint 和 build 不依赖主数据，放在拉数据之前，出错时能更快失败
@@ -57,8 +52,11 @@ jobs:
 
       - name: Fetch latest master data
         run: |
+          set -euo pipefail
           mkdir -p sekai-master-db-diff
-          for f in $MASTER_DB_FILES; do
+          tables="${{ steps.tables.outputs.list }}"
+          echo "拉取 $(echo "$tables" | wc -w) 张主数据表"
+          for f in $tables; do
             curl -fsSL "https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/main/$f.json" \
               -o "sekai-master-db-diff/$f.json"
           done
