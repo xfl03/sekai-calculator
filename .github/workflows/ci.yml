@@ -19,7 +19,9 @@ env:
   # 测试实际只读取这 23 个主数据表；全量仓库 379MB 且每天更新，没必要整仓库拉
   MASTER_DB_FILES: >-
     areaItemLevels areaItems areas cardEpisodes cardRarities cards characterRanks
-    eventCards eventDeckBonuses eventHonorBonuses eventRarityBonusRates eventTotalPowerLimits
+    eventCardBonusLimits eventCards eventDeckBonuses eventHonorBonuses eventRarityBonusRates
+    eventSkillScoreUpLimits eventTotalPowerLimits
+    eventMysekaiFixtureGameCharacterPerformanceBonusLimits
     events gameCharacterUnits gameCharacters honors masterLessons shopItems skills
     worldBloomDifferentAttributeBonuses worldBloomSupportDeckBonuses
     worldBloomSupportDeckUnitEventLimitedBonuses worldBlooms

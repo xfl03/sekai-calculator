@@ -143,10 +143,13 @@ export class EventService {
 
   /**
    * 获得特定卡牌加成数量限制（用于World Link Finale）
+   * 这一张是可选表：数据源只提供部分表时按「默认全加成」处理
+   * @param eventId 活动ID
    */
   public async getEventCardBonusCountLimit (eventId: number): Promise<number> {
     const limits = await this.dataProvider
       .getMasterData<EventCardBonusLimit>('eventCardBonusLimits')
+      .catch(() => [] as EventCardBonusLimit[])
     const limit = limits.find(it => it.eventId === eventId)
     return limit?.memberCountLimit ?? 5 // 默认全加成
   }
@@ -159,6 +162,7 @@ export class EventService {
   public async getEventSkillScoreUpLimit (eventId: number): Promise<number> {
     const limits =
         await this.dataProvider.getMasterData<EventSkillScoreUpLimit>('eventSkillScoreUpLimits')
+          .catch(() => [] as EventSkillScoreUpLimit[])
     const limit =
         limits.find(it => it.eventId === eventId)
     if (limit === undefined) {
@@ -169,13 +173,14 @@ export class EventService {
 
   /**
    * 获得World Link Finale My SEKAI家具加成限制
+   * 这一张是可选表：数据源只提供部分表时按「不限制」处理
    * @param eventId 活动ID
    */
   public async getMysekaiFixtureLimit (eventId: number): Promise<number> {
     const limits = await this.dataProvider
       .getMasterData<EventMysekaiFixtureGameCharacterPerformanceBonusLimit>(
       'eventMysekaiFixtureGameCharacterPerformanceBonusLimits'
-    )
+    ).catch(() => [] as EventMysekaiFixtureGameCharacterPerformanceBonusLimit[])
     const limit =
         limits.find(it => it.eventId === eventId)
     return limit?.bonusRateLimit ?? Number.MAX_SAFE_INTEGER
