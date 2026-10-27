@@ -1,22 +1,27 @@
-# CI：每次 push（含 tag）和 PR 都必须通过 lint + 编译 + 测试
+# CI：每次分支 push 和 PR 都必须通过 lint + 编译 + 测试
+#
+# tag 不触发 CI：一次发布是「先推分支（跑 CI）→ 再打 tag（只跑 Release）」，
+# Release 的 verify 作业会反查同一个 SHA 的 CI 结果，tag 再跑一遍纯属浪费。
 #
 # 数据策略：线上永远用最新主数据，所以这里每次现拉，不做版本锁定。
 name: CI
 
 on:
   push:
+    # 只关心分支；tag 推送交给 release.yml（它反查同一 SHA 的 CI 结果）
+    branches: ['**']
   pull_request:
 
-# 同一分支上的旧运行被新提交取消；tag 运行不取消（release 要等它的结果）
+# 同一分支上的旧运行被新提交取消
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 env:
-  # 测试实际只读取这 23 个主数据表；全量仓库 379MB 且每天更新，没必要整仓库拉
+  # 测试实际只读取这 26 个主数据表；全量仓库 379MB 且每天更新，没必要整仓库拉
   MASTER_DB_FILES: >-
     areaItemLevels areaItems areas cardEpisodes cardRarities cards characterRanks
     eventCardBonusLimits eventCards eventDeckBonuses eventHonorBonuses eventRarityBonusRates
