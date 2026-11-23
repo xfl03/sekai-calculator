@@ -19,23 +19,28 @@ export class LiveExactCalculator {
    * @param musicScore 游玩的谱面
    * @param multiSumPower 多人5人的综合力总和
    * @param feverMusicScore 多人房主的谱面（可选）
+   * @param level 谱面等级（可选）
    */
   public async calculate (
     power: number, skills: number[], liveType: LiveType,
-    musicScore: MusicScore, multiSumPower: number = power * 5, feverMusicScore: MusicScore = musicScore
+    musicScore: MusicScore, multiSumPower: number = power * 5, feverMusicScore: MusicScore = musicScore,
+    level?: number
   ): Promise<LiveExactDetail> {
+    const round = Math.fround
     // 获得游戏内加成信息
     const effects = LiveExactCalculator.getSkillDetails(skills, musicScore.skills)
-    if (liveType === LiveType.MULTI || liveType === LiveType.CHEERFUL) {
-      // 多人Live还需要考虑Fever效果，按时间排序加进effect
-      const feverDetail = LiveExactCalculator.getFeverDetail(feverMusicScore)
-      effects.push(feverDetail)
-    }
+    // 多人Live还需要考虑Fever效果
+    const feverDetail = liveType === LiveType.MULTI || liveType === LiveType.CHEERFUL
+      ? LiveExactCalculator.getFeverDetail(feverMusicScore)
+      : undefined
     // 全note权重计算
     const ingameNotes = await this.dataProvider.getMasterData<IngameNote>('ingameNotes')
     const noteCoefficients = musicScore.notes
-      .map(note => findOrThrow(ingameNotes, it => it.id === note.type).scoreCoefficient)
-    const coefficientTotal = noteCoefficients.reduce((total, it) => total + it, 0)
+      .map(note => round(findOrThrow(ingameNotes, it => it.id === note.type).scoreCoefficient))
+    const coefficientTotal = noteCoefficients.reduce((total, it) => round(total + it), 0)
+    const difficultyFactor = level === undefined ? 1 : round(1 + round(round(level - 5) * round(0.005)))
+    const baseTotalScore = Math.floor(round(round(Math.trunc(power) * 4) * difficultyFactor))
+    const baseNoteScore = round(baseTotalScore / coefficientTotal)
     // 单note单独计算
     const ingameCombos = await this.dataProvider.getMasterData<IngameCombo>('ingameCombos')
     const notes = musicScore.notes.map((note, i) => {
@@ -43,18 +48,24 @@ export class LiveExactCalculator {
       const noteCoefficient = noteCoefficients[i]
       // Combo加成
       const combo = i + 1 // 下标从0开始
-      const comboCoefficient = findOrThrow(ingameCombos,
-        it => it.fromCount <= combo && combo <= it.toCount).scoreCoefficient
+      const comboCoefficient = round(findOrThrow(ingameCombos,
+        it => it.fromCount <= combo && combo <= it.toCount).scoreCoefficient)
       // 判定加成
       const judgeCoefficient = 1 // PERFECT
-      // 效果加成（累乘）
+      // 效果加成（累加）
       const effectBonuses = effects
-        .filter(it => it.startTime <= note.time && note.time <= it.endTime)
+        .filter(it => it.startTime <= note.time && note.time < it.endTime)
         .map(it => it.effect)
       const effectCoefficient = effectBonuses
-        .reduce((total, it) => total * (it / 100), 1)
+        .reduce((total, it) => round(total + round(round(it) * round(0.01))), 1)
       // 计算最终分数
-      const score = noteCoefficient * comboCoefficient * judgeCoefficient * effectCoefficient * power * 4 / coefficientTotal
+      let score = round(round(round(judgeCoefficient * noteCoefficient) * effectCoefficient) * comboCoefficient)
+      score = round(score * baseNoteScore)
+      if (!(score >= 1)) score = round(1)
+      if (feverDetail !== undefined && feverDetail.startTime <= note.time && note.time < feverDetail.endTime) {
+        effectBonuses.push(feverDetail.effect)
+        score = round(score * round(1 + feverDetail.effect / 100))
+      }
       return {
         noteCoefficient,
         comboCoefficient,
@@ -63,7 +74,7 @@ export class LiveExactCalculator {
         score
       }
     })
-    const noteTotal = notes.reduce((a, b) => a + b.score, 0)
+    const noteTotal = notes.reduce((a, b) => round(a + b.score), 0)
     // 独立的活跃加成
     const activeBonus = liveType === LiveType.MULTI
       ? 5 * LiveCalculator.getMultiActiveBonus(multiSumPower)

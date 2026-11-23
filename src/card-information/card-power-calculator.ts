@@ -188,12 +188,12 @@ export class CardPowerCalculator {
         allMatch ? areaItem.power3AllMatchBonusRate : areaItem.power3BonusRate
       ]
       rates.forEach((rate, i) => {
-        areaItemBonus[i] = Math.fround(areaItemBonus[i] +
-          Math.fround(Math.fround(Math.fround(rate) * Math.fround(0.01)) * basePower[i]))
+        areaItemBonus[i] = Math.fround(areaItemBonus[i] + Math.fround(rate))
       })
     }
     // 三个维度单独计算后向下取整再累加
-    return areaItemBonus.reduce((v, it) => v + Math.floor(it), 0)
+    return areaItemBonus.reduce((v, it, i) =>
+      v + Math.floor(Math.fround(Math.fround(Math.fround(it) * Math.fround(0.01)) * basePower[i])), 0)
   }
 
   /**
@@ -249,7 +249,7 @@ export class CardPowerCalculator {
 
     // 按各个综合分别计算加成，其中totalBonusRate单位是0.1%
     return Math.floor(Math.fround(CardPowerCalculator.sumPower(basePower) *
-        Math.fround(Math.fround(bonus) * Math.fround(0.001))))
+        Math.fround(Math.fround(Math.fround(bonus) / Math.fround(10)) / Math.fround(100))))
   }
 
   /**
